@@ -1,0 +1,1788 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TRAIL探究ニュース｜探究教室TRAIL</title>
+  <meta name="description" content="探究教室TRAILが発信する中学受験・探究教育ニュース。2026年入試速報、注目校ガイド、保護者の声。" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔍</text></svg>" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 📝 記事データ — ここを編集すれば記事の追加・修正ができます
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//
+// 【記事の追加方法】
+// ARTICLES配列に新しいオブジェクトを追加してください。
+// id: ユニークな数字（重複不可）
+// date: "2026年2月6日" のような形式
+// dateKey: "0206" のような形式（日付フィルター用）
+// category: "juken" | "school" | "tankyu" | "ai" | "oyako"
+// title: 記事タイトル
+// summary: 一覧に表示される要約（1-2文）
+// heroEmoji: カードに大きく表示される絵文字
+// accentColor: カテゴリ色（下のCATEGORY_COLORSを参照）
+// body: 本文ブロックの配列（下記参照）
+// tags: タグの配列
+// tankyuPoint: 🧭探究ポイント（省略可）
+// aiAngle: 🤖AI時代の視点（省略可）
+// oyakoTalk: 💬親子で話そう（省略可）
+// videoUrl: YouTube動画URL（省略可・ダッシュボードで追加可能）
+//
+// 【本文ブロックの種類】
+// { type: "text", content: "本文テキスト" }
+// { type: "heading", content: "小見出し" }
+// { type: "list", items: ["項目1", "項目2"] }
+// { type: "table", title: "表タイトル", headers: [...], rows: [[...], ...] }
+// { type: "highlight", items: [{ school: "学校名", detail: "説明" }] }
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+const SITE = {
+  name: "トレイル探究ニュース",
+  tagline: "中学受験 × 探究学習 × AI時代の学び",
+  description: "探究教室TRAILが届ける、親子で読む中学受験ニュース",
+};
+
+const NAV_CATEGORIES = [
+  { id: "all", label: "すべて", icon: "📰" },
+  { id: "juken", label: "入試速報", icon: "🎯" },
+  { id: "school", label: "学校情報", icon: "🏫" },
+  { id: "tankyu", label: "探究コラム", icon: "🔍" },
+  { id: "ai", label: "AI×教育", icon: "🤖" },
+  { id: "oyako", label: "親子で考える", icon: "💬" },
+];
+
+const CATEGORY_COLORS = {
+  juken: "#E8453C",
+  school: "#059669",
+  tankyu: "#D97706",
+  ai: "#2563EB",
+  oyako: "#7C3AED",
+};
+
+const CATEGORY_LABELS = {
+  juken: "入試速報",
+  school: "学校情報",
+  tankyu: "探究コラム",
+  ai: "AI×教育",
+  oyako: "親子で考える",
+};
+
+const DATE_TABS = [
+  { key: "all", label: "すべて" },
+  { key: "0201", label: "2/1" },
+  { key: "0202", label: "2/2" },
+  { key: "0203", label: "2/3" },
+  { key: "0204", label: "2/4" },
+  { key: "0205", label: "2/5" },
+];
+
+// ━━━ 全25記事データ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 🎨 UIコンポーネント
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+function CalendarDropdown({ currentDate, onDateChange, onClose }) {
+  const calRef = useRef(null);
+
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (calRef.current && !calRef.current.contains(e.target)) onClose();
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [onClose]);
+
+  // February 2026 starts on Sunday (day 0)
+  const daysInMonth = 28;
+  const startDay = 0; // Sunday
+  const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
+  const articleDates = [1, 2, 3, 4, 5]; // days with articles
+
+  const cells = [];
+  for (let i = 0; i < startDay; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  const dateKeyFor = (d) => `02${String(d).padStart(2, "0")}`;
+  const isSelected = (d) => currentDate === dateKeyFor(d);
+  const hasArticle = (d) => articleDates.includes(d);
+
+  return (
+    <div ref={calRef} style={{
+      position: "absolute", top: "100%", left: 0, marginTop: 6,
+      background: "#fff", borderRadius: 16,
+      border: "1px solid #E8E0D4",
+      boxShadow: "0 12px 40px rgba(26,18,7,0.15)",
+      padding: "20px", width: 300, zIndex: 200,
+      animation: "calendarSlideIn 0.25s ease",
+    }}>
+      {/* Month header */}
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        marginBottom: 16,
+      }}>
+        <div style={{
+          fontFamily: "'Zen Kaku Gothic New', sans-serif",
+          fontSize: 16, fontWeight: 800, color: "#1A1207",
+        }}>📅 2026年2月</div>
+        <button onClick={() => { onDateChange("all"); onClose(); }} style={{
+          padding: "4px 12px", borderRadius: 12, border: "1px solid #D4C5AE",
+          background: currentDate === "all" ? "#1A1207" : "#FFFCF7",
+          color: currentDate === "all" ? "#fff" : "#6B5D4A",
+          fontFamily: "'Zen Kaku Gothic New', sans-serif",
+          fontSize: 11, fontWeight: 600, cursor: "pointer",
+        }}>すべて表示</button>
+      </div>
+
+      {/* Day names */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2, marginBottom: 4 }}>
+        {dayNames.map((d, i) => (
+          <div key={d} style={{
+            textAlign: "center", padding: "4px 0",
+            fontFamily: "'Zen Kaku Gothic New', sans-serif",
+            fontSize: 10, fontWeight: 700,
+            color: i === 0 ? "#E8453C" : i === 6 ? "#2563EB" : "#A0947E",
+          }}>{d}</div>
+        ))}
+      </div>
+
+      {/* Calendar grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2 }}>
+        {cells.map((day, i) => {
+          if (day === null) return <div key={`e${i}`} />;
+          const hasArt = hasArticle(day);
+          const selected = isSelected(day);
+          const isSunday = i % 7 === 0;
+          const isSaturday = i % 7 === 6;
+
+          return (
+            <button
+              key={day}
+              onClick={() => {
+                if (hasArt) { onDateChange(dateKeyFor(day)); onClose(); }
+              }}
+              style={{
+                position: "relative",
+                width: "100%", aspectRatio: "1", borderRadius: 12,
+                border: selected ? "2px solid #EA580C" : "2px solid transparent",
+                background: selected ? "#FFF7ED" : hasArt ? "#FFFCF7" : "transparent",
+                cursor: hasArt ? "pointer" : "default",
+                display: "flex", flexDirection: "column",
+                alignItems: "center", justifyContent: "center", gap: 2,
+                fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                fontSize: 14, fontWeight: hasArt ? 800 : 400,
+                color: selected ? "#EA580C" : hasArt ? "#1A1207" : isSunday ? "#E8453C99" : isSaturday ? "#2563EB99" : "#C5B9A5",
+                transition: "all 0.15s ease",
+              }}
+            >
+              {day}
+              {hasArt && (
+                <div style={{
+                  display: "flex", gap: 2, alignItems: "center",
+                }}>
+                  <span style={{
+                    width: 5, height: 5, borderRadius: "50%",
+                    background: selected ? "#EA580C" : "#F97316",
+                  }} />
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Legend */}
+      <div style={{
+        display: "flex", alignItems: "center", gap: 12,
+        marginTop: 14, paddingTop: 12, borderTop: "1px solid #F0EBE2",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+          <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#F97316" }} />
+          <span style={{
+            fontFamily: "'Zen Kaku Gothic New', sans-serif",
+            fontSize: 10, color: "#8B7355",
+          }}>記事あり</span>
+        </div>
+        <span style={{
+          fontFamily: "'Zen Kaku Gothic New', sans-serif",
+          fontSize: 10, color: "#A0947E",
+        }}>日付をタップして絞り込み</span>
+      </div>
+    </div>
+  );
+}
+
+function Header({ onNav, currentCategory, currentDate, onDateChange }) {
+  const [scrolled, setScrolled] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+
+  useEffect(() => {
+    const h = () => setScrolled(window.scrollY > 40);
+    window.addEventListener("scroll", h);
+    return () => window.removeEventListener("scroll", h);
+  }, []);
+
+  const dateLabel = currentDate === "all"
+    ? "2月のニュース"
+    : `2月${parseInt(currentDate.slice(2))}日`;
+
+  return (
+    <header style={{
+      position: "sticky", top: 0, zIndex: 100,
+      background: scrolled ? "rgba(255,252,247,0.95)" : "#FFFCF7",
+      backdropFilter: scrolled ? "blur(12px)" : "none",
+      borderBottom: scrolled ? "1px solid #E8E0D4" : "1px solid transparent",
+      transition: "all 0.3s ease",
+    }}>
+      <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 20px" }}>
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: scrolled ? "10px 0" : "20px 0",
+          transition: "padding 0.3s ease",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}
+            onClick={() => { onNav("all"); onDateChange("all"); setCalendarOpen(false); }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: 12,
+              background: "linear-gradient(135deg, #F97316 0%, #EA580C 100%)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 22, boxShadow: "0 2px 8px rgba(249,115,22,0.3)",
+            }}>🔍</div>
+            <div>
+              <div style={{
+                fontFamily: "'Zen Kaku Gothic New', 'Noto Sans JP', sans-serif",
+                fontWeight: 900, fontSize: scrolled ? 16 : 20,
+                color: "#1A1207", letterSpacing: "-0.02em",
+                transition: "font-size 0.3s ease",
+              }}>トレイル探究ニュース</div>
+              {!scrolled && (
+                <div style={{
+                  fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                  fontSize: 11, color: "#8B7355", letterSpacing: "0.05em", marginTop: 2,
+                }}>中学受験 × 探究学習 × AI時代の学び</div>
+              )}
+            </div>
+          </div>
+          <a href="#about" style={{
+            fontSize: 12, color: "#8B7355", textDecoration: "none",
+            padding: "6px 14px", borderRadius: 20,
+            border: "1px solid #D4C5AE", fontWeight: 600,
+            fontFamily: "'Zen Kaku Gothic New', sans-serif",
+          }}>TRAILについて</a>
+        </div>
+
+        {/* Date picker + Category nav row */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 8,
+          padding: "8px 0 12px",
+        }}>
+          {/* Calendar button */}
+          <div style={{ position: "relative" }}>
+            <button
+              onClick={() => setCalendarOpen(!calendarOpen)}
+              style={{
+                display: "flex", alignItems: "center", gap: 6,
+                padding: "6px 14px", borderRadius: 20,
+                border: currentDate !== "all" ? "2px solid #EA580C" : "1px solid #D4C5AE",
+                background: currentDate !== "all" ? "#FFF7ED" : "#FFFCF7",
+                cursor: "pointer",
+                fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                fontSize: 12, fontWeight: 700,
+                color: currentDate !== "all" ? "#EA580C" : "#6B5D4A",
+                transition: "all 0.2s ease",
+              }}
+            >
+              <span style={{ fontSize: 14 }}>📅</span>
+              {dateLabel}
+              <span style={{
+                fontSize: 10, marginLeft: 2,
+                transform: calendarOpen ? "rotate(180deg)" : "rotate(0deg)",
+                transition: "transform 0.2s ease",
+              }}>▼</span>
+            </button>
+
+            {calendarOpen && (
+              <CalendarDropdown
+                currentDate={currentDate}
+                onDateChange={onDateChange}
+                onClose={() => setCalendarOpen(false)}
+              />
+            )}
+          </div>
+
+          {/* Divider */}
+          <div style={{ width: 1, height: 20, background: "#E8E0D4", flexShrink: 0 }} />
+
+          {/* Category nav */}
+          <nav style={{
+            display: "flex", gap: 4, flex: 1,
+            overflowX: "auto", scrollbarWidth: "none",
+          }}>
+            {NAV_CATEGORIES.map(cat => (
+              <button key={cat.id} onClick={() => onNav(cat.id)} style={{
+                display: "flex", alignItems: "center", gap: 5,
+                padding: "6px 12px", borderRadius: 20,
+                border: "none", cursor: "pointer",
+                fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                fontSize: 12, fontWeight: currentCategory === cat.id ? 700 : 500,
+                background: currentCategory === cat.id ? "#1A1207" : "transparent",
+                color: currentCategory === cat.id ? "#FFFCF7" : "#6B5D4A",
+                whiteSpace: "nowrap", transition: "all 0.2s ease",
+              }}>
+                <span style={{ fontSize: 13 }}>{cat.icon}</span>
+                {cat.label}
+              </button>
+            ))}
+          </nav>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function HeroSection() {
+  return (
+    <section style={{
+      background: "linear-gradient(135deg, #FFF7ED 0%, #FEF3E2 50%, #FFFBF5 100%)",
+      borderBottom: "1px solid #E8E0D4",
+      padding: "44px 20px 36px",
+    }}>
+      <div style={{ maxWidth: 960, margin: "0 auto" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+          <span style={{
+            display: "inline-block", width: 8, height: 8, borderRadius: "50%",
+            background: "#E8453C", animation: "pulse 2s infinite",
+          }} />
+          <span style={{
+            fontFamily: "'Zen Kaku Gothic New', sans-serif",
+            fontSize: 12, fontWeight: 700, color: "#E8453C",
+            letterSpacing: "0.08em",
+          }}>LIVE — 2026年2月</span>
+        </div>
+        <h1 style={{
+          fontFamily: "'Zen Kaku Gothic New', 'Noto Sans JP', sans-serif",
+          fontSize: "clamp(22px, 5vw, 34px)", fontWeight: 900,
+          color: "#1A1207", lineHeight: 1.35,
+          letterSpacing: "-0.02em", margin: "0 0 10px",
+        }}>
+          2026年中学入試、まさに真っ最中。<br/>
+          <span style={{ color: "#EA580C" }}>探究の目で</span>ニュースを読もう。
+        </h1>
+        <p style={{
+          fontFamily: "'Zen Kaku Gothic New', sans-serif",
+          fontSize: 14, color: "#6B5D4A", lineHeight: 1.7,
+          maxWidth: 560, margin: 0,
+        }}>
+          偏差値や合格テクニックだけじゃない。「なぜ？」「本当に？」「自分ならどう考える？」——<br/>
+          親子で一緒に、ニュースから学ぶ力を育てます。
+        </p>
+        <div style={{ display: "flex", gap: 10, marginTop: 20, flexWrap: "wrap" }}>
+          {["🧒 子どもにも読める", "🤖 AI時代の視点つき", "💬 親子の対話ネタ"].map(tag => (
+            <span key={tag} style={{
+              display: "inline-flex", alignItems: "center",
+              padding: "5px 12px", borderRadius: 20,
+              background: "rgba(234,88,12,0.08)",
+              fontFamily: "'Zen Kaku Gothic New', sans-serif",
+              fontSize: 11, fontWeight: 600, color: "#C2410C",
+            }}>{tag}</span>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ArticleCard({ article, onSelect, index }) {
+  const [hovered, setHovered] = useState(false);
+  const color = CATEGORY_COLORS[article.category] || "#6B5D4A";
+  const label = CATEGORY_LABELS[article.category] || "";
+
+  return (
+    <article
+      onClick={() => onSelect(article)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: "#fff", borderRadius: 16,
+        border: "1px solid #E8E0D4", overflow: "hidden",
+        cursor: "pointer", transition: "all 0.3s ease",
+        transform: hovered ? "translateY(-3px)" : "translateY(0)",
+        boxShadow: hovered ? "0 10px 28px rgba(26,18,7,0.1)" : "0 2px 8px rgba(26,18,7,0.04)",
+        animation: `fadeSlideUp 0.4s ease ${index * 0.06}s both`,
+      }}
+    >
+      <div style={{ height: 4, background: `linear-gradient(90deg, ${color}, ${color}88)` }} />
+      <div style={{ padding: "20px 22px 18px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+          <span style={{
+            padding: "2px 10px", borderRadius: 12,
+            background: `${color}12`, color,
+            fontFamily: "'Zen Kaku Gothic New', sans-serif",
+            fontSize: 11, fontWeight: 700,
+          }}>{label}</span>
+          <span style={{
+            fontFamily: "'Zen Kaku Gothic New', sans-serif",
+            fontSize: 11, color: "#A0947E",
+          }}>{article.date}</span>
+        </div>
+        <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+          <span style={{ fontSize: 28, lineHeight: 1, flexShrink: 0, marginTop: 2 }}>{article.heroEmoji}</span>
+          <div>
+            <h2 style={{
+              fontFamily: "'Zen Kaku Gothic New', 'Noto Sans JP', sans-serif",
+              fontSize: 16, fontWeight: 800, color: "#1A1207",
+              lineHeight: 1.45, margin: "0 0 8px", letterSpacing: "-0.01em",
+            }}>{article.title}</h2>
+            <p style={{
+              fontFamily: "'Zen Kaku Gothic New', sans-serif",
+              fontSize: 13, color: "#6B5D4A", lineHeight: 1.6, margin: 0,
+            }}>{article.summary}</p>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 6, marginTop: 14, flexWrap: "wrap", alignItems: "center" }}>
+          {article.tags.slice(0, 3).map(tag => (
+            <span key={tag} style={{
+              padding: "2px 9px", borderRadius: 10, background: "#F5F0E8",
+              fontFamily: "'Zen Kaku Gothic New', sans-serif",
+              fontSize: 10, color: "#8B7355",
+            }}>#{tag}</span>
+          ))}
+          <span style={{
+            marginLeft: "auto",
+            fontFamily: "'Zen Kaku Gothic New', sans-serif",
+            fontSize: 11, color: "#EA580C", fontWeight: 600,
+          }}>続きを読む →</span>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function SpecialBox({ type, title, icon, content }) {
+  const styles = {
+    tankyu: { bg: "#FFF7ED", border: "#F9731622", accent: "#EA580C" },
+    ai: { bg: "#EFF6FF", border: "#3B82F622", accent: "#2563EB" },
+    oyako: { bg: "#F0FDF4", border: "#22C55E22", accent: "#059669" },
+  };
+  const s = styles[type] || styles.tankyu;
+  return (
+    <div style={{
+      background: s.bg, borderRadius: 14,
+      border: `1px solid ${s.border}`, padding: "18px 20px", margin: "20px 0",
+    }}>
+      <div style={{
+        fontFamily: "'Zen Kaku Gothic New', sans-serif",
+        fontSize: 13, fontWeight: 800, color: s.accent, marginBottom: 8,
+      }}>{icon} {title}</div>
+      <div style={{
+        fontFamily: "'Zen Kaku Gothic New', sans-serif",
+        fontSize: 13, lineHeight: 1.8, color: "#2D2416",
+      }}>{content}</div>
+    </div>
+  );
+}
+
+// YouTube URL → embed ID 変換
+function extractYouTubeId(url) {
+  if (!url) return null;
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
+    /^([a-zA-Z0-9_-]{11})$/,
+  ];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+function VideoEmbed({ url }) {
+  const videoId = extractYouTubeId(url);
+  if (!videoId) return null;
+  return (
+    <div style={{
+      margin: "24px 0", borderRadius: 14, overflow: "hidden",
+      border: "1px solid #E8E0D4",
+      boxShadow: "0 2px 12px rgba(26,18,7,0.06)",
+    }}>
+      <div style={{
+        fontFamily: "'Zen Kaku Gothic New', sans-serif",
+        fontSize: 12, fontWeight: 700, color: "#6B5D4A",
+        padding: "12px 16px 0", display: "flex", alignItems: "center", gap: 6,
+      }}>
+        <span style={{ fontSize: 14 }}>🎬</span> 関連動画
+      </div>
+      <div style={{
+        position: "relative", paddingBottom: "56.25%", height: 0,
+        margin: "10px 12px 12px",  borderRadius: 10, overflow: "hidden",
+      }}>
+        <iframe
+          src={`https://www.youtube.com/embed/${videoId}`}
+          title="関連動画"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          style={{
+            position: "absolute", top: 0, left: 0,
+            width: "100%", height: "100%", border: "none",
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+const REACTIONS = [
+  { emoji: "👍", label: "いいね" },
+  { emoji: "🤔", label: "考えさせられる" },
+  { emoji: "💡", label: "なるほど" },
+  { emoji: "❤️", label: "すき" },
+  { emoji: "🔥", label: "熱い" },
+];
+
+function CommentSection({ articleId }) {
+  const [comments, setComments] = useState([]);
+  const [reactions, setReactions] = useState({});
+  const [myReactions, setMyReactions] = useState({});
+  const [name, setName] = useState("");
+  const [text, setText] = useState("");
+  const [role, setRole] = useState("parent");
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const storageKey = `comments:${articleId}`;
+  const reactionKey = `reactions:${articleId}`;
+  const myReactionKey = `my-reactions:${articleId}`;
+
+  // Load from storage
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const [cRes, rRes, mrRes] = await Promise.all([
+          window.storage.get(storageKey, true).catch(() => null),
+          window.storage.get(reactionKey, true).catch(() => null),
+          window.storage.get(myReactionKey).catch(() => null),
+        ]);
+        if (cRes?.value) setComments(JSON.parse(cRes.value));
+        if (rRes?.value) setReactions(JSON.parse(rRes.value));
+        if (mrRes?.value) setMyReactions(JSON.parse(mrRes.value));
+      } catch (e) {
+        console.error("Storage load error:", e);
+      }
+      setLoading(false);
+    };
+    load();
+  }, [articleId]);
+
+  const handleReaction = async (emoji) => {
+    const already = myReactions[emoji];
+    const newMy = { ...myReactions, [emoji]: !already };
+    const newR = { ...reactions };
+    newR[emoji] = (newR[emoji] || 0) + (already ? -1 : 1);
+    if (newR[emoji] <= 0) delete newR[emoji];
+    setMyReactions(newMy);
+    setReactions(newR);
+    try {
+      await window.storage.set(reactionKey, JSON.stringify(newR), true);
+      await window.storage.set(myReactionKey, JSON.stringify(newMy));
+    } catch (e) { console.error(e); }
+  };
+
+  const handleSubmit = async () => {
+    if (!text.trim() || !name.trim()) return;
+    setSubmitting(true);
+    const newComment = {
+      id: Date.now().toString(),
+      name: name.trim(),
+      role,
+      text: text.trim(),
+      time: new Date().toLocaleString("ja-JP"),
+    };
+    const updated = [newComment, ...comments];
+    setComments(updated);
+    setText("");
+    try {
+      await window.storage.set(storageKey, JSON.stringify(updated), true);
+    } catch (e) { console.error(e); }
+    setSubmitting(false);
+  };
+
+  const roleLabels = { parent: "保護者", child: "子ども", teacher: "先生", other: "その他" };
+  const roleColors = { parent: "#059669", child: "#EA580C", teacher: "#2563EB", other: "#8B7355" };
+
+  return (
+    <div style={{
+      background: "#fff", borderRadius: 20,
+      border: "1px solid #E8E0D4", overflow: "hidden",
+      boxShadow: "0 4px 16px rgba(26,18,7,0.04)",
+      marginTop: 20,
+    }}>
+      <div style={{ padding: "24px 24px 28px" }}>
+        {/* Reactions */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{
+            fontFamily: "'Zen Kaku Gothic New', sans-serif",
+            fontSize: 13, fontWeight: 800, color: "#1A1207", marginBottom: 12,
+          }}>この記事どうだった？</div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {REACTIONS.map(r => {
+              const count = reactions[r.emoji] || 0;
+              const active = myReactions[r.emoji];
+              return (
+                <button key={r.emoji} onClick={() => handleReaction(r.emoji)} style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                  padding: "8px 14px", borderRadius: 24,
+                  border: active ? "2px solid #F97316" : "1px solid #E8E0D4",
+                  background: active ? "#FFF7ED" : "#FFFCF7",
+                  cursor: "pointer", transition: "all 0.2s ease",
+                  transform: active ? "scale(1.05)" : "scale(1)",
+                }}>
+                  <span style={{ fontSize: 18 }}>{r.emoji}</span>
+                  <span style={{
+                    fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                    fontSize: 11, fontWeight: 600,
+                    color: active ? "#EA580C" : "#8B7355",
+                  }}>{r.label}</span>
+                  {count > 0 && (
+                    <span style={{
+                      fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                      fontSize: 11, fontWeight: 800,
+                      color: active ? "#EA580C" : "#A0947E",
+                      background: active ? "#FDBA7422" : "#F5F0E8",
+                      padding: "1px 7px", borderRadius: 10,
+                    }}>{count}</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div style={{ height: 1, background: "#F0EBE2", margin: "0 0 24px" }} />
+
+        {/* Comment form */}
+        <div style={{
+          fontFamily: "'Zen Kaku Gothic New', sans-serif",
+          fontSize: 13, fontWeight: 800, color: "#1A1207", marginBottom: 14,
+        }}>💬 みんなのコメント</div>
+
+        <div style={{
+          background: "#F9F4EC", borderRadius: 14, padding: "18px 18px 14px",
+          marginBottom: 20,
+        }}>
+          <div style={{ display: "flex", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
+            <input type="text" placeholder="なまえ（ニックネームでもOK）"
+              value={name} onChange={e => setName(e.target.value)}
+              style={{
+                flex: "1 1 120px", padding: "8px 14px", borderRadius: 10,
+                border: "1px solid #D4C5AE", background: "#fff",
+                fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                fontSize: 13, color: "#1A1207", outline: "none",
+              }}
+            />
+            <div style={{ display: "flex", gap: 4 }}>
+              {Object.entries(roleLabels).map(([k, v]) => (
+                <button key={k} onClick={() => setRole(k)} style={{
+                  padding: "6px 10px", borderRadius: 12, border: "none", cursor: "pointer",
+                  fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                  fontSize: 10, fontWeight: role === k ? 700 : 500,
+                  background: role === k ? roleColors[k] + "18" : "transparent",
+                  color: role === k ? roleColors[k] : "#A0947E",
+                  transition: "all 0.15s ease",
+                }}>{v}</button>
+              ))}
+            </div>
+          </div>
+          <textarea
+            placeholder="この記事を読んで思ったこと、親子で話したこと、質問などを書いてみよう ✏️"
+            value={text} onChange={e => setText(e.target.value)}
+            rows={3}
+            style={{
+              width: "100%", padding: "10px 14px", borderRadius: 10,
+              border: "1px solid #D4C5AE", background: "#fff",
+              fontFamily: "'Zen Kaku Gothic New', sans-serif",
+              fontSize: 13, color: "#1A1207", lineHeight: 1.7,
+              resize: "vertical", outline: "none",
+            }}
+          />
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
+            <button onClick={handleSubmit}
+              disabled={!text.trim() || !name.trim() || submitting}
+              style={{
+                padding: "8px 20px", borderRadius: 20, border: "none",
+                background: (!text.trim() || !name.trim()) ? "#D4C5AE" : "linear-gradient(135deg, #F97316, #EA580C)",
+                color: "#fff", cursor: (!text.trim() || !name.trim()) ? "default" : "pointer",
+                fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                fontSize: 12, fontWeight: 700,
+                boxShadow: (text.trim() && name.trim()) ? "0 2px 8px rgba(249,115,22,0.3)" : "none",
+                transition: "all 0.2s ease",
+                opacity: submitting ? 0.6 : 1,
+              }}
+            >{submitting ? "送信中…" : "コメントする"}</button>
+          </div>
+        </div>
+
+        {/* Comment list */}
+        {loading ? (
+          <div style={{
+            textAlign: "center", padding: "20px",
+            fontFamily: "'Zen Kaku Gothic New', sans-serif",
+            fontSize: 12, color: "#A0947E",
+          }}>読み込み中…</div>
+        ) : comments.length === 0 ? (
+          <div style={{
+            textAlign: "center", padding: "28px 20px",
+            fontFamily: "'Zen Kaku Gothic New', sans-serif",
+            color: "#A0947E",
+          }}>
+            <div style={{ fontSize: 28, marginBottom: 8 }}>🌱</div>
+            <div style={{ fontSize: 12 }}>まだコメントはありません。最初の一人になろう！</div>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {comments.map((c, i) => (
+              <div key={c.id} style={{
+                display: "flex", gap: 12, alignItems: "flex-start",
+                animation: i === 0 ? "fadeSlideUp 0.3s ease" : "none",
+              }}>
+                <div style={{
+                  width: 34, height: 34, borderRadius: "50%", flexShrink: 0,
+                  background: `${roleColors[c.role] || "#8B7355"}18`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                  fontSize: 13, fontWeight: 800,
+                  color: roleColors[c.role] || "#8B7355",
+                }}>{c.name.charAt(0)}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                    <span style={{
+                      fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                      fontSize: 12, fontWeight: 700, color: "#1A1207",
+                    }}>{c.name}</span>
+                    <span style={{
+                      padding: "1px 7px", borderRadius: 8,
+                      background: `${roleColors[c.role] || "#8B7355"}12`,
+                      fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                      fontSize: 9, fontWeight: 700,
+                      color: roleColors[c.role] || "#8B7355",
+                    }}>{roleLabels[c.role] || "その他"}</span>
+                    <span style={{
+                      fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                      fontSize: 10, color: "#C5B9A5",
+                    }}>{c.time}</span>
+                  </div>
+                  <div style={{
+                    fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                    fontSize: 13, lineHeight: 1.7, color: "#2D2416",
+                    background: "#F9F4EC", borderRadius: 12,
+                    padding: "10px 14px",
+                  }}>{c.text}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ArticleDetail({ article, onBack, showComments = false }) {
+  const topRef = useRef(null);
+  const color = CATEGORY_COLORS[article.category] || "#6B5D4A";
+  const label = CATEGORY_LABELS[article.category] || "";
+
+  useEffect(() => {
+    topRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [article]);
+
+  const renderBlock = (block, i) => {
+    if (block.type === "text") {
+      return (
+        <p key={i} style={{
+          fontFamily: "'Zen Kaku Gothic New', sans-serif",
+          fontSize: 15, lineHeight: 1.85, color: "#2D2416", margin: "0 0 18px",
+        }}>{block.content}</p>
+      );
+    }
+    if (block.type === "heading") {
+      return (
+        <h3 key={i} style={{
+          fontFamily: "'Zen Kaku Gothic New', sans-serif",
+          fontSize: 16, fontWeight: 800, color: "#1A1207",
+          margin: "28px 0 12px", paddingLeft: 14,
+          borderLeft: `4px solid ${color}`,
+        }}>{block.content}</h3>
+      );
+    }
+    if (block.type === "quote") {
+      return (
+        <blockquote key={i} style={{
+          margin: "20px 0", padding: "16px 20px",
+          background: "#F9F4EC", borderLeft: `4px solid ${color}`,
+          borderRadius: "0 12px 12px 0",
+          fontFamily: "'Zen Kaku Gothic New', sans-serif",
+          fontSize: 14, lineHeight: 1.8, color: "#2D2416", fontStyle: "italic",
+        }}>
+          <div>{block.content}</div>
+          {block.source && <div style={{ marginTop: 8, fontSize: 12, color: "#8B7355", fontStyle: "normal" }}>—— {block.source}</div>}
+        </blockquote>
+      );
+    }
+    if (block.type === "callout") {
+      const bgMap = { info: "#EFF6FF", warning: "#FFFBEB", success: "#F0FDF4", pink: "#FFF1F2" };
+      const borderMap = { info: "#3B82F6", warning: "#F59E0B", success: "#10B981", pink: "#F43F5E" };
+      const bg = bgMap[block.style] || bgMap.info;
+      const border = borderMap[block.style] || borderMap.info;
+      return (
+        <div key={i} style={{
+          margin: "20px 0", padding: "16px 20px",
+          background: bg, border: `1px solid ${border}33`,
+          borderRadius: 12, borderLeft: `4px solid ${border}`,
+          fontFamily: "'Zen Kaku Gothic New', sans-serif",
+        }}>
+          {block.title && <div style={{ fontSize: 13, fontWeight: 800, color: border, marginBottom: 6 }}>{block.title}</div>}
+          <div style={{ fontSize: 14, lineHeight: 1.75, color: "#2D2416" }}>{block.content}</div>
+        </div>
+      );
+    }
+    if (block.type === "stat") {
+      return (
+        <div key={i} style={{
+          display: "flex", flexWrap: "wrap", gap: 12, margin: "20px 0",
+        }}>
+          {block.items.map((s, j) => (
+            <div key={j} style={{
+              flex: "1 1 140px", background: "#fff", border: "1px solid #E8E0D4",
+              borderRadius: 14, padding: "18px 16px", textAlign: "center",
+              boxShadow: "0 2px 8px rgba(26,18,7,0.04)",
+            }}>
+              <div style={{
+                fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                fontSize: 28, fontWeight: 900, color: color,
+                letterSpacing: "-0.02em",
+              }}>{s.value}</div>
+              <div style={{
+                fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                fontSize: 11, fontWeight: 600, color: "#6B5D4A", marginTop: 4,
+              }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    if (block.type === "chart") {
+      const maxVal = Math.max(...block.data.map(d => d.value));
+      return (
+        <div key={i} style={{ margin: "24px 0" }}>
+          {block.title && <div style={{
+            fontFamily: "'Zen Kaku Gothic New', sans-serif",
+            fontSize: 13, fontWeight: 700, color: "#6B5D4A", marginBottom: 12,
+          }}>{block.title}</div>}
+          <div style={{
+            background: "#fff", border: "1px solid #E8E0D4", borderRadius: 14,
+            padding: "20px 16px", boxShadow: "0 2px 8px rgba(26,18,7,0.04)",
+          }}>
+            {block.data.map((d, j) => (
+              <div key={j} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: j < block.data.length - 1 ? 10 : 0 }}>
+                <div style={{
+                  width: 80, textAlign: "right", fontSize: 11, fontWeight: 600,
+                  fontFamily: "'Zen Kaku Gothic New', sans-serif", color: "#6B5D4A",
+                  flexShrink: 0,
+                }}>{d.label}</div>
+                <div style={{ flex: 1, height: 24, background: "#F5F0E8", borderRadius: 6, overflow: "hidden" }}>
+                  <div style={{
+                    width: `${(d.value / maxVal) * 100}%`,
+                    height: "100%", borderRadius: 6,
+                    background: `linear-gradient(90deg, ${d.color || color}, ${d.color || color}AA)`,
+                    transition: "width 0.6s ease",
+                  }} />
+                </div>
+                <div style={{
+                  width: 48, fontSize: 12, fontWeight: 700,
+                  fontFamily: "'Zen Kaku Gothic New', sans-serif", color: "#2D2416",
+                  flexShrink: 0,
+                }}>{d.value}{block.unit || ""}</div>
+              </div>
+            ))}
+          </div>
+          {block.source && <div style={{
+            fontFamily: "'Zen Kaku Gothic New', sans-serif",
+            fontSize: 10, color: "#A89B8C", marginTop: 6, textAlign: "right",
+          }}>出典: {block.source}</div>}
+        </div>
+      );
+    }
+    if (block.type === "table") {
+      return (
+        <div key={i} style={{ margin: "20px 0", overflowX: "auto" }}>
+          <div style={{
+            fontFamily: "'Zen Kaku Gothic New', sans-serif",
+            fontSize: 12, fontWeight: 700, color: "#6B5D4A", marginBottom: 8,
+          }}>{block.title}</div>
+          <table style={{
+            width: "100%", borderCollapse: "collapse",
+            fontFamily: "'Zen Kaku Gothic New', sans-serif", fontSize: 12,
+          }}>
+            <thead>
+              <tr>{block.headers.map((h, j) => (
+                <th key={j} style={{
+                  padding: "9px 12px", textAlign: j === 0 ? "left" : "center",
+                  background: "#1A1207", color: "#FFFCF7", fontWeight: 700, fontSize: 11,
+                  borderRadius: j === 0 ? "8px 0 0 0" : j === block.headers.length - 1 ? "0 8px 0 0" : 0,
+                }}>{h}</th>
+              ))}</tr>
+            </thead>
+            <tbody>
+              {block.rows.map((row, ri) => (
+                <tr key={ri} style={{ background: ri % 2 === 0 ? "#FFFCF7" : "#F9F4EC" }}>
+                  {row.map((cell, ci) => (
+                    <td key={ci} style={{
+                      padding: "8px 12px", textAlign: ci === 0 ? "left" : "center",
+                      borderBottom: "1px solid #E8E0D4", fontWeight: ci === 0 ? 600 : 400,
+                      color: ci === 2 ? (cell.startsWith("+") ? "#059669" : cell.startsWith("−") ? "#E8453C" : "#6B5D4A") : "#2D2416",
+                    }}>{cell}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+    if (block.type === "list") {
+      return (
+        <ul key={i} style={{ margin: "12px 0 18px", paddingLeft: 24 }}>
+          {block.items.map((item, j) => (
+            <li key={j} style={{
+              fontFamily: "'Zen Kaku Gothic New', sans-serif",
+              fontSize: 14, lineHeight: 1.8, color: "#2D2416", marginBottom: 6,
+            }}>{item}</li>
+          ))}
+        </ul>
+      );
+    }
+    return null;
+  };
+
+  return (
+    <div ref={topRef} style={{ animation: "fadeIn 0.4s ease" }}>
+      <button onClick={onBack} style={{
+        display: "inline-flex", alignItems: "center", gap: 6,
+        padding: "7px 14px", borderRadius: 20,
+        border: "1px solid #D4C5AE", background: "#FFFCF7",
+        cursor: "pointer", marginBottom: 20,
+        fontFamily: "'Zen Kaku Gothic New', sans-serif",
+        fontSize: 12, fontWeight: 600, color: "#6B5D4A",
+      }}>← 記事一覧にもどる</button>
+
+      <div style={{
+        background: "#fff", borderRadius: 20,
+        border: "1px solid #E8E0D4", overflow: "hidden",
+        boxShadow: "0 4px 16px rgba(26,18,7,0.06)",
+      }}>
+        <div style={{ height: 5, background: `linear-gradient(90deg, ${color}, ${color}66)` }} />
+        <div style={{ padding: "28px 24px 32px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+            <span style={{
+              padding: "3px 12px", borderRadius: 12,
+              background: `${color}12`, color,
+              fontFamily: "'Zen Kaku Gothic New', sans-serif",
+              fontSize: 11, fontWeight: 700,
+            }}>{label}</span>
+            <span style={{
+              fontFamily: "'Zen Kaku Gothic New', sans-serif",
+              fontSize: 11, color: "#A0947E",
+            }}>{article.date}</span>
+          </div>
+
+          <div style={{ display: "flex", gap: 14, alignItems: "flex-start", marginBottom: 24 }}>
+            <span style={{ fontSize: 38, lineHeight: 1, flexShrink: 0 }}>{article.heroEmoji}</span>
+            <h1 style={{
+              fontFamily: "'Zen Kaku Gothic New', 'Noto Sans JP', sans-serif",
+              fontSize: "clamp(18px, 4vw, 26px)", fontWeight: 900,
+              color: "#1A1207", lineHeight: 1.4, letterSpacing: "-0.02em", margin: 0,
+            }}>{article.title}</h1>
+          </div>
+
+          <div style={{
+            display: "flex", alignItems: "center", gap: 10,
+            padding: "12px 16px", borderRadius: 12,
+            background: "#F9F4EC", marginBottom: 28,
+          }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: "50%",
+              background: "linear-gradient(135deg, #F97316, #EA580C)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 14, color: "#fff", fontWeight: 800,
+            }}>T</div>
+            <div>
+              <div style={{
+                fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                fontSize: 12, fontWeight: 700, color: "#1A1207",
+              }}>探究教室TRAIL 編集部</div>
+              <div style={{
+                fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                fontSize: 10, color: "#8B7355",
+              }}>「考える力」を育てる視点でニュースを解説</div>
+            </div>
+          </div>
+
+          {/* Body */}
+          {article.body.map((block, i) => renderBlock(block, i))}
+
+          {/* Special sections */}
+          {article.tankyuPoint && (
+            <SpecialBox type="tankyu" title="TRAIL探究ポイント" icon="🧭" content={article.tankyuPoint} />
+          )}
+          {article.aiAngle && (
+            <SpecialBox type="ai" title="AI時代の視点" icon="🤖" content={article.aiAngle} />
+          )}
+          {article.oyakoTalk && (
+            <SpecialBox type="oyako" title="親子で話そう" icon="💬" content={article.oyakoTalk} />
+          )}
+
+          {/* Related video */}
+          {article.videoUrl && <VideoEmbed url={article.videoUrl} />}
+
+          {/* Tags */}
+          <div style={{
+            display: "flex", gap: 7, flexWrap: "wrap",
+            marginTop: 24, paddingTop: 18, borderTop: "1px solid #E8E0D4",
+          }}>
+            {article.tags.map(tag => (
+              <span key={tag} style={{
+                padding: "4px 11px", borderRadius: 12, background: "#F5F0E8",
+                fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                fontSize: 11, color: "#8B7355",
+              }}>#{tag}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Comments & Reactions */}
+      {showComments && <CommentSection articleId={article.id} />}
+    </div>
+  );
+}
+
+function Sidebar() {
+  return (
+    <aside style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+      {/* Article count */}
+      <div style={{
+        background: "linear-gradient(135deg, #FFF7ED, #FEF3E2)",
+        borderRadius: 14, padding: "18px 20px",
+        border: "1px solid #F9731622",
+        textAlign: "center",
+      }}>
+        <div style={{
+          fontFamily: "'Zen Kaku Gothic New', sans-serif",
+          fontSize: 36, fontWeight: 900, color: "#EA580C",
+        }}>25</div>
+        <div style={{
+          fontFamily: "'Zen Kaku Gothic New', sans-serif",
+          fontSize: 12, color: "#8B7355", fontWeight: 600,
+        }}>記事を公開中（2/1〜2/5）</div>
+      </div>
+
+      {/* About TRAIL */}
+      <div id="about" style={{
+        background: "#fff", borderRadius: 14,
+        border: "1px solid #E8E0D4", padding: "20px 18px",
+      }}>
+        <div style={{
+          fontFamily: "'Zen Kaku Gothic New', sans-serif",
+          fontSize: 13, fontWeight: 800, color: "#1A1207",
+          marginBottom: 12, display: "flex", alignItems: "center", gap: 8,
+        }}>🔍 探究教室TRAILとは</div>
+        <p style={{
+          fontFamily: "'Zen Kaku Gothic New', sans-serif",
+          fontSize: 12, color: "#6B5D4A", lineHeight: 1.75, margin: "0 0 12px",
+        }}>「問いを立てる力」を育てる個別指導教室。AI時代を生き抜くために必要な、自分で考え、探究する力を育てます。</p>
+        {[
+          ["👤", "個別指導", "1対1で「問い」を深める"],
+          ["👥", "少人数制", "3〜6人で対話的に学ぶ"],
+          ["🤖", "AI時代対応", "AIを使いこなす力を育成"],
+        ].map(([icon, title, desc]) => (
+          <div key={title} style={{
+            display: "flex", gap: 10, alignItems: "flex-start",
+            padding: "8px 10px", borderRadius: 10, background: "#F9F4EC",
+            marginBottom: 6,
+          }}>
+            <span style={{ fontSize: 16, flexShrink: 0 }}>{icon}</span>
+            <div>
+              <div style={{ fontFamily: "'Zen Kaku Gothic New', sans-serif", fontSize: 11, fontWeight: 700, color: "#1A1207" }}>{title}</div>
+              <div style={{ fontFamily: "'Zen Kaku Gothic New', sans-serif", fontSize: 10, color: "#8B7355" }}>{desc}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Category Guide */}
+      <div style={{
+        background: "#fff", borderRadius: 14,
+        border: "1px solid #E8E0D4", padding: "20px 18px",
+      }}>
+        <div style={{
+          fontFamily: "'Zen Kaku Gothic New', sans-serif",
+          fontSize: 13, fontWeight: 800, color: "#1A1207", marginBottom: 12,
+        }}>📂 カテゴリガイド</div>
+        {[
+          { icon: "🎯", name: "入試速報", desc: "出願・倍率・合格速報をリアルタイムで" },
+          { icon: "🏫", name: "学校情報", desc: "新設校・カリキュラム変更・学校の特色" },
+          { icon: "🔍", name: "探究コラム", desc: "ニュースの裏側を「探究」の目で深掘り" },
+          { icon: "🤖", name: "AI×教育", desc: "AI時代に必要な学びと最新動向" },
+          { icon: "💬", name: "親子で考える", desc: "家庭で使える対話ネタ・探究チャレンジ" },
+        ].map(cat => (
+          <div key={cat.name} style={{
+            display: "flex", gap: 10, padding: "8px 0",
+            borderBottom: "1px solid #F0EBE2",
+          }}>
+            <span style={{ fontSize: 14, flexShrink: 0 }}>{cat.icon}</span>
+            <div>
+              <div style={{ fontFamily: "'Zen Kaku Gothic New', sans-serif", fontSize: 12, fontWeight: 700, color: "#1A1207" }}>{cat.name}</div>
+              <div style={{ fontFamily: "'Zen Kaku Gothic New', sans-serif", fontSize: 10, color: "#8B7355" }}>{cat.desc}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Editorial policy */}
+      <div style={{
+        background: "linear-gradient(135deg, #1A1207 0%, #2D2416 100%)",
+        borderRadius: 14, padding: "20px 18px", color: "#FFFCF7",
+      }}>
+        <div style={{
+          fontFamily: "'Zen Kaku Gothic New', sans-serif",
+          fontSize: 13, fontWeight: 800, marginBottom: 12,
+        }}>✏️ 編集方針</div>
+        {[
+          "偏差値に振り回されない賢い選択を応援します",
+          "すべての記事に「探究ポイント」をつけ、親子の対話のきっかけをつくります",
+          "AIと一緒に考える力を育てる視点を大切にします",
+          "子どもが自分で読んでも理解できるやさしい日本語を心がけます",
+        ].map((text, i) => (
+          <div key={i} style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+            <span style={{ color: "#F97316", fontSize: 10, marginTop: 4, flexShrink: 0 }}>●</span>
+            <span style={{
+              fontFamily: "'Zen Kaku Gothic New', sans-serif",
+              fontSize: 11, lineHeight: 1.65, color: "#D4C5AE",
+            }}>{text}</span>
+          </div>
+        ))}
+      </div>
+    </aside>
+  );
+}
+
+function Footer() {
+  return (
+    <footer style={{ background: "#1A1207", padding: "36px 20px 28px", marginTop: 40 }}>
+      <div style={{ maxWidth: 960, margin: "0 auto", textAlign: "center" }}>
+        <div style={{
+          fontFamily: "'Zen Kaku Gothic New', sans-serif",
+          fontSize: 16, fontWeight: 900, color: "#FFFCF7", marginBottom: 6,
+        }}>🔍 トレイル探究ニュース</div>
+        <div style={{
+          fontFamily: "'Zen Kaku Gothic New', sans-serif",
+          fontSize: 11, color: "#8B7355", marginBottom: 20,
+        }}>探究教室TRAILが届ける、親子で読む中学受験ニュース</div>
+        <div style={{
+          fontFamily: "'Zen Kaku Gothic New', sans-serif",
+          fontSize: 10, color: "#6B5D4A",
+        }}>© 2026 探究教室TRAIL. All rights reserved.</div>
+      </div>
+    </footer>
+  );
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 📋 編集ダッシュボード
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+function DashboardField({ label, value, onChange, multiline, small }) {
+  const common = {
+    width: "100%", padding: small ? "8px 12px" : "10px 14px",
+    borderRadius: 10, border: "1px solid #D4C5AE",
+    background: "#FFFCF7", fontFamily: "'Zen Kaku Gothic New', sans-serif",
+    fontSize: 13, color: "#1A1207", outline: "none",
+    transition: "border-color 0.2s",
+  };
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <label style={{
+        display: "block", marginBottom: 5,
+        fontFamily: "'Zen Kaku Gothic New', sans-serif",
+        fontSize: 11, fontWeight: 700, color: "#8B7355",
+      }}>{label}</label>
+      {multiline ? (
+        <textarea value={value} onChange={e => onChange(e.target.value)}
+          rows={4} style={{ ...common, resize: "vertical", lineHeight: 1.7 }}
+          onFocus={e => e.target.style.borderColor = "#F97316"}
+          onBlur={e => e.target.style.borderColor = "#D4C5AE"}
+        />
+      ) : (
+        <input type="text" value={value} onChange={e => onChange(e.target.value)}
+          style={common}
+          onFocus={e => e.target.style.borderColor = "#F97316"}
+          onBlur={e => e.target.style.borderColor = "#D4C5AE"}
+        />
+      )}
+    </div>
+  );
+}
+
+function DashboardBodyEditor({ body, onChange }) {
+  const updateBlock = (idx, field, val) => {
+    const next = [...body];
+    next[idx] = { ...next[idx], [field]: val };
+    onChange(next);
+  };
+
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <label style={{
+        display: "block", marginBottom: 8,
+        fontFamily: "'Zen Kaku Gothic New', sans-serif",
+        fontSize: 11, fontWeight: 700, color: "#8B7355",
+      }}>本文ブロック</label>
+      {body.map((block, i) => (
+        <div key={i} style={{
+          background: "#F9F4EC", borderRadius: 10, padding: "12px 14px",
+          marginBottom: 8, position: "relative",
+        }}>
+          <div style={{
+            display: "flex", alignItems: "center", gap: 8, marginBottom: 8,
+          }}>
+            <span style={{
+              padding: "2px 8px", borderRadius: 8,
+              background: block.type === "heading" ? "#EA580C22" : block.type === "table" ? "#2563EB22" : "#1A120711",
+              fontFamily: "'Zen Kaku Gothic New', sans-serif",
+              fontSize: 10, fontWeight: 700,
+              color: block.type === "heading" ? "#EA580C" : block.type === "table" ? "#2563EB" : "#6B5D4A",
+            }}>
+              {block.type === "heading" ? "見出し" : block.type === "table" ? "表" : block.type === "chart" ? "📊グラフ" : block.type === "stat" ? "📈数字" : block.type === "quote" ? "💬引用" : block.type === "callout" ? "📌注目" : "本文"}
+            </span>
+            <span style={{
+              fontFamily: "'Zen Kaku Gothic New', sans-serif",
+              fontSize: 10, color: "#A0947E",
+            }}>ブロック {i + 1}</span>
+          </div>
+          {block.type === "table" ? (
+            <div style={{
+              fontFamily: "'Zen Kaku Gothic New', sans-serif",
+              fontSize: 11, color: "#8B7355", fontStyle: "italic",
+            }}>（表はコード内で直接編集してください）</div>
+          ) : (
+            <textarea
+              value={block.content}
+              onChange={e => updateBlock(i, "content", e.target.value)}
+              rows={block.type === "heading" ? 1 : 3}
+              style={{
+                width: "100%", padding: "8px 10px", borderRadius: 8,
+                border: "1px solid #D4C5AE", background: "#fff",
+                fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                fontSize: 12, color: "#1A1207", lineHeight: 1.7,
+                resize: "vertical", outline: "none",
+                fontWeight: block.type === "heading" ? 700 : 400,
+              }}
+              onFocus={e => e.target.style.borderColor = "#F97316"}
+              onBlur={e => e.target.style.borderColor = "#D4C5AE"}
+            />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ArticleEditor({ article, onUpdate, onClose }) {
+  const [draft, setDraft] = useState(JSON.parse(JSON.stringify(article)));
+  const [saved, setSaved] = useState(false);
+
+  const set = (field) => (val) => setDraft(d => ({ ...d, [field]: val }));
+
+  const handleSave = () => {
+    onUpdate(draft);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  const color = CATEGORY_COLORS[draft.category] || "#6B5D4A";
+
+  return (
+    <div style={{ animation: "fadeIn 0.3s ease" }}>
+      {/* Header bar */}
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        marginBottom: 20, flexWrap: "wrap", gap: 10,
+      }}>
+        <button onClick={onClose} style={{
+          display: "inline-flex", alignItems: "center", gap: 6,
+          padding: "7px 14px", borderRadius: 20,
+          border: "1px solid #D4C5AE", background: "#fff",
+          cursor: "pointer", fontFamily: "'Zen Kaku Gothic New', sans-serif",
+          fontSize: 12, fontWeight: 600, color: "#6B5D4A",
+        }}>← 一覧に戻る</button>
+        <button onClick={handleSave} style={{
+          display: "inline-flex", alignItems: "center", gap: 6,
+          padding: "8px 20px", borderRadius: 20, border: "none",
+          background: saved ? "#059669" : "linear-gradient(135deg, #F97316, #EA580C)",
+          cursor: "pointer", fontFamily: "'Zen Kaku Gothic New', sans-serif",
+          fontSize: 13, fontWeight: 700, color: "#fff",
+          boxShadow: "0 2px 8px rgba(249,115,22,0.3)",
+          transition: "all 0.3s ease",
+        }}>{saved ? "✓ 保存しました" : "💾 保存する"}</button>
+      </div>
+
+      <div style={{
+        display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20,
+        alignItems: "start",
+      }}>
+        {/* Left: Editor */}
+        <div style={{
+          background: "#fff", borderRadius: 16, border: "1px solid #E8E0D4",
+          padding: "24px", maxHeight: "80vh", overflowY: "auto",
+        }}>
+          <div style={{
+            fontFamily: "'Zen Kaku Gothic New', sans-serif",
+            fontSize: 14, fontWeight: 800, color: "#1A1207", marginBottom: 18,
+            display: "flex", alignItems: "center", gap: 8,
+          }}>
+            <span style={{ fontSize: 18 }}>{draft.heroEmoji}</span>
+            記事を編集
+          </div>
+
+          {/* Meta */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 4 }}>
+            <DashboardField label="日付" value={draft.date} onChange={set("date")} small />
+            <div style={{ marginBottom: 14 }}>
+              <label style={{
+                display: "block", marginBottom: 5,
+                fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                fontSize: 11, fontWeight: 700, color: "#8B7355",
+              }}>カテゴリ</label>
+              <select value={draft.category} onChange={e => set("category")(e.target.value)}
+                style={{
+                  width: "100%", padding: "8px 12px", borderRadius: 10,
+                  border: "1px solid #D4C5AE", background: "#FFFCF7",
+                  fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                  fontSize: 13, color: "#1A1207", outline: "none",
+                }}>
+                {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
+                  <option key={k} value={k}>{v}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <DashboardField label="タイトル" value={draft.title} onChange={set("title")} />
+          <DashboardField label="要約（一覧表示用）" value={draft.summary} onChange={set("summary")} multiline />
+
+          <DashboardBodyEditor body={draft.body} onChange={set("body")} />
+
+          <DashboardField label="🧭 探究ポイント" value={draft.tankyuPoint || ""} onChange={set("tankyuPoint")} multiline />
+          <DashboardField label="🤖 AI時代の視点" value={draft.aiAngle || ""} onChange={set("aiAngle")} multiline />
+          <DashboardField label="💬 親子で話そう" value={draft.oyakoTalk || ""} onChange={set("oyakoTalk")} multiline />
+
+          <DashboardField label="タグ（カンマ区切り）" value={(draft.tags || []).join(", ")}
+            onChange={v => set("tags")(v.split(",").map(t => t.trim()).filter(Boolean))} />
+
+          {/* Video URL */}
+          <div style={{ marginBottom: 14 }}>
+            <label style={{
+              display: "block", marginBottom: 5,
+              fontFamily: "'Zen Kaku Gothic New', sans-serif",
+              fontSize: 11, fontWeight: 700, color: "#8B7355",
+            }}>🎬 関連動画（YouTube URL・空欄でもOK）</label>
+            <input type="text"
+              placeholder="https://www.youtube.com/watch?v=... または https://youtu.be/..."
+              value={draft.videoUrl || ""}
+              onChange={e => set("videoUrl")(e.target.value)}
+              style={{
+                width: "100%", padding: "10px 14px", borderRadius: 10,
+                border: "1px solid #D4C5AE", background: "#FFFCF7",
+                fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                fontSize: 13, color: "#1A1207", outline: "none",
+              }}
+              onFocus={e => e.target.style.borderColor = "#F97316"}
+              onBlur={e => e.target.style.borderColor = "#D4C5AE"}
+            />
+            {draft.videoUrl && !extractYouTubeId(draft.videoUrl) && (
+              <div style={{
+                fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                fontSize: 10, color: "#E8453C", marginTop: 4,
+              }}>⚠️ YouTube URLとして認識できません</div>
+            )}
+            {draft.videoUrl && extractYouTubeId(draft.videoUrl) && (
+              <div style={{
+                fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                fontSize: 10, color: "#059669", marginTop: 4,
+              }}>✓ 動画を認識しました（プレビューで確認できます）</div>
+            )}
+          </div>
+        </div>
+
+        {/* Right: Live Preview */}
+        <div style={{
+          background: "#FFFCF7", borderRadius: 16, border: "1px solid #E8E0D4",
+          padding: "20px", maxHeight: "80vh", overflowY: "auto",
+        }}>
+          <div style={{
+            fontFamily: "'Zen Kaku Gothic New', sans-serif",
+            fontSize: 12, fontWeight: 700, color: "#8B7355",
+            marginBottom: 14, display: "flex", alignItems: "center", gap: 6,
+          }}>
+            <span style={{ fontSize: 14 }}>👁️</span> プレビュー
+          </div>
+          <ArticleDetail article={draft} onBack={() => {}} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Dashboard({ articles, onUpdateArticle }) {
+  const [editingId, setEditingId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterCat, setFilterCat] = useState("all");
+
+  const filtered = articles.filter(a => {
+    if (filterCat !== "all" && a.category !== filterCat) return false;
+    if (searchQuery && !a.title.includes(searchQuery) && !a.summary.includes(searchQuery)) return false;
+    return true;
+  });
+
+  if (editingId) {
+    const article = articles.find(a => a.id === editingId);
+    if (article) {
+      return (
+        <ArticleEditor
+          article={article}
+          onUpdate={(updated) => { onUpdateArticle(updated); }}
+          onClose={() => setEditingId(null)}
+        />
+      );
+    }
+  }
+
+  return (
+    <div style={{ animation: "fadeIn 0.3s ease" }}>
+      {/* Dashboard header */}
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        marginBottom: 20, flexWrap: "wrap", gap: 12,
+      }}>
+        <div>
+          <div style={{
+            fontFamily: "'Zen Kaku Gothic New', sans-serif",
+            fontSize: 20, fontWeight: 900, color: "#1A1207",
+          }}>📋 記事ダッシュボード</div>
+          <div style={{
+            fontFamily: "'Zen Kaku Gothic New', sans-serif",
+            fontSize: 12, color: "#8B7355", marginTop: 4,
+          }}>{articles.length}件の記事を管理中</div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div style={{
+        display: "flex", gap: 10, marginBottom: 18, flexWrap: "wrap", alignItems: "center",
+      }}>
+        <input
+          type="text" placeholder="🔍 記事を検索…"
+          value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+          style={{
+            padding: "8px 14px", borderRadius: 20, border: "1px solid #D4C5AE",
+            background: "#fff", fontFamily: "'Zen Kaku Gothic New', sans-serif",
+            fontSize: 12, color: "#1A1207", outline: "none", width: 200,
+          }}
+        />
+        <div style={{ display: "flex", gap: 4 }}>
+          {[{ id: "all", label: "すべて" }, ...Object.entries(CATEGORY_LABELS).map(([k, v]) => ({ id: k, label: v }))].map(c => (
+            <button key={c.id} onClick={() => setFilterCat(c.id)} style={{
+              padding: "5px 12px", borderRadius: 16, border: "none", cursor: "pointer",
+              fontFamily: "'Zen Kaku Gothic New', sans-serif",
+              fontSize: 11, fontWeight: filterCat === c.id ? 700 : 500,
+              background: filterCat === c.id ? "#1A1207" : "#F5F0E8",
+              color: filterCat === c.id ? "#fff" : "#6B5D4A",
+            }}>{c.label}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Article list */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {filtered.map((article, i) => {
+          const color = CATEGORY_COLORS[article.category] || "#6B5D4A";
+          const label = CATEGORY_LABELS[article.category] || "";
+          return (
+            <div key={article.id}
+              onClick={() => setEditingId(article.id)}
+              style={{
+                display: "flex", alignItems: "center", gap: 14,
+                background: "#fff", borderRadius: 12, border: "1px solid #E8E0D4",
+                padding: "14px 18px", cursor: "pointer",
+                transition: "all 0.2s ease",
+                animation: `fadeSlideUp 0.3s ease ${i * 0.03}s both`,
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "#F97316"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(249,115,22,0.1)"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "#E8E0D4"; e.currentTarget.style.boxShadow = "none"; }}
+            >
+              <span style={{ fontSize: 24, flexShrink: 0 }}>{article.heroEmoji}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                  <span style={{
+                    padding: "1px 8px", borderRadius: 8,
+                    background: `${color}15`, color,
+                    fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                    fontSize: 10, fontWeight: 700,
+                  }}>{label}</span>
+                  <span style={{
+                    fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                    fontSize: 10, color: "#A0947E",
+                  }}>{article.date}</span>
+                </div>
+                <div style={{
+                  fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                  fontSize: 13, fontWeight: 700, color: "#1A1207",
+                  whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                }}>{article.title}</div>
+              </div>
+              <span style={{
+                fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                fontSize: 11, color: "#EA580C", fontWeight: 600, flexShrink: 0,
+              }}>編集 →</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 🚀 メインApp
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+function App() {
+  const [mode, setMode] = useState("site"); // "site" | "dashboard"
+  const [articles, setArticles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [category, setCategory] = useState("all");
+  const [dateFilter, setDateFilter] = useState("all");
+  const [selectedArticle, setSelectedArticle] = useState(null);
+  const [dashAuth, setDashAuth] = useState(false);
+  const [dashPw, setDashPw] = useState("");
+  const [dashPwErr, setDashPwErr] = useState(false);
+  const DASH_PW = "trail2026";
+
+  useEffect(() => {
+    fetch("./articles.json")
+      .then(r => r.json())
+      .then(data => { setArticles(data); setLoading(false); })
+      .catch(() => {
+        // Fallback: try embedded ARTICLES if available
+        if (typeof ARTICLES !== "undefined") { setArticles(ARTICLES); }
+        setLoading(false);
+      });
+  }, []);
+
+  const handleDashLogin = () => {
+    if (dashPw === DASH_PW) { setDashAuth(true); setDashPwErr(false); setMode("dashboard"); }
+    else { setDashPwErr(true); }
+  };
+
+  const filteredArticles = articles.filter(a => {
+    if (category !== "all" && a.category !== category) return false;
+    if (dateFilter !== "all" && a.dateKey !== dateFilter) return false;
+    return true;
+  });
+
+  const handleUpdateArticle = (updated) => {
+    setArticles(prev => prev.map(a => a.id === updated.id ? updated : a));
+  };
+
+  if (loading) {
+    return (
+      <div style={{ background: "#FFFCF7", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ textAlign: "center", fontFamily: "'Zen Kaku Gothic New', sans-serif" }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
+          <div style={{ fontSize: 14, color: "#6B5D4A" }}>記事を読み込み中...</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ background: "#FFFCF7", minHeight: "100vh" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #FFFCF7; }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: #D4C5AE; border-radius: 3px; }
+        @keyframes fadeSlideUp {
+          from { opacity: 0; transform: translateY(16px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; } to { opacity: 1; }
+        }
+        @keyframes calendarSlideIn {
+          from { opacity: 0; transform: translateY(-8px) scale(0.96); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; } 50% { opacity: 0.4; }
+        }
+        @media (max-width: 768px) {
+          .main-grid { grid-template-columns: 1fr !important; }
+          .editor-grid { grid-template-columns: 1fr !important; }
+        }
+        textarea:focus, input:focus, select:focus { border-color: #F97316 !important; }
+      `}</style>
+
+      {/* Mode toggle bar */}
+      <div style={{
+        background: "#1A1207", padding: "0 20px",
+        display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+      }}>
+        {[
+          { id: "site", label: "🌐 公開サイト" },
+          { id: "dashboard", label: "📋 編集ダッシュボード" },
+        ].map(m => (
+          <button key={m.id} onClick={() => {
+            if (m.id === "dashboard" && !dashAuth) { setMode("login"); setSelectedArticle(null); }
+            else { setMode(m.id); setSelectedArticle(null); }
+          }} style={{
+            padding: "10px 20px", border: "none", cursor: "pointer",
+            fontFamily: "'Zen Kaku Gothic New', sans-serif",
+            fontSize: 12, fontWeight: mode === m.id ? 700 : 500,
+            background: mode === m.id ? "#FFFCF7" : "transparent",
+            color: mode === m.id ? "#1A1207" : "#8B7355",
+            borderRadius: "8px 8px 0 0", marginTop: 4,
+            transition: "all 0.2s ease",
+          }}>{m.label}</button>
+        ))}
+      </div>
+
+      {mode === "login" ? (
+        <div style={{ maxWidth: 400, margin: "80px auto", padding: "40px 24px", textAlign: "center",
+          fontFamily: "'Zen Kaku Gothic New', sans-serif" }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "#1A1207", marginBottom: 8 }}>
+            編集ダッシュボード
+          </div>
+          <div style={{ fontSize: 13, color: "#8B7355", marginBottom: 24 }}>
+            パスワードを入力してください
+          </div>
+          <input
+            type="password" value={dashPw}
+            onChange={e => { setDashPw(e.target.value); setDashPwErr(false); }}
+            onKeyDown={e => e.key === "Enter" && handleDashLogin()}
+            placeholder="パスワード"
+            style={{
+              width: "100%", padding: "12px 16px", fontSize: 15,
+              border: dashPwErr ? "2px solid #E8453C" : "2px solid #E8E0D4",
+              borderRadius: 10, outline: "none", marginBottom: 8,
+              fontFamily: "'Zen Kaku Gothic New', sans-serif",
+              background: "#FFFCF7",
+            }}
+          />
+          {dashPwErr && (
+            <div style={{ fontSize: 13, color: "#E8453C", marginBottom: 8 }}>
+              パスワードが違います
+            </div>
+          )}
+          <button onClick={handleDashLogin} style={{
+            width: "100%", padding: "12px 0", fontSize: 15, fontWeight: 700,
+            background: "#F97316", color: "#FFF", border: "none",
+            borderRadius: 10, cursor: "pointer", marginTop: 8,
+            fontFamily: "'Zen Kaku Gothic New', sans-serif",
+          }}>ログイン</button>
+          <button onClick={() => setMode("site")} style={{
+            marginTop: 12, background: "none", border: "none",
+            color: "#8B7355", fontSize: 13, cursor: "pointer",
+            fontFamily: "'Zen Kaku Gothic New', sans-serif",
+          }}>← サイトに戻る</button>
+        </div>
+      ) : mode === "dashboard" ? (
+        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 20px" }}>
+          <Dashboard articles={articles} onUpdateArticle={handleUpdateArticle} />
+        </div>
+      ) : (
+        <>
+          <Header
+            onNav={(c) => { setCategory(c); setSelectedArticle(null); }}
+            currentCategory={category}
+            currentDate={dateFilter}
+            onDateChange={(d) => { setDateFilter(d); setSelectedArticle(null); }}
+          />
+
+          {!selectedArticle && <HeroSection />}
+
+          <main style={{ maxWidth: 960, margin: "0 auto", padding: "28px 20px 0" }}>
+            <div className="main-grid" style={{
+              display: "grid",
+              gridTemplateColumns: selectedArticle ? "1fr" : "1fr 280px",
+              gap: 24, alignItems: "start",
+            }}>
+              <div>
+                {selectedArticle ? (
+                  <ArticleDetail article={selectedArticle} onBack={() => setSelectedArticle(null)} showComments={true} />
+                ) : (
+                  <>
+                    <div style={{
+                      fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                      fontSize: 12, fontWeight: 700, color: "#8B7355",
+                      marginBottom: 14, letterSpacing: "0.05em",
+                    }}>
+                      {category === "all" ? "📰 最新ニュース" : NAV_CATEGORIES.find(c => c.id === category)?.icon + " " + NAV_CATEGORIES.find(c => c.id === category)?.label}
+                      {dateFilter !== "all" && ` — ${DATE_TABS.find(d => d.key === dateFilter)?.label}`}
+                      <span style={{ fontWeight: 400, marginLeft: 8 }}>{filteredArticles.length}件</span>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                      {filteredArticles.map((article, i) => (
+                        <ArticleCard key={article.id} article={article} onSelect={setSelectedArticle} index={i} />
+                      ))}
+                      {filteredArticles.length === 0 && (
+                        <div style={{
+                          textAlign: "center", padding: "50px 20px",
+                          fontFamily: "'Zen Kaku Gothic New', sans-serif", color: "#A0947E",
+                        }}>
+                          <div style={{ fontSize: 40, marginBottom: 10 }}>📭</div>
+                          この条件の記事はまだありません
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+              {!selectedArticle && <Sidebar />}
+            </div>
+          </main>
+          <Footer />
+        </>
+      )}
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(React.createElement(App));
+  </script>
+</body>
+</html>
