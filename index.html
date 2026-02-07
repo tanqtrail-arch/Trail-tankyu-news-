@@ -1611,6 +1611,10 @@ function App() {
     return true;
   });
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [category, dateFilter]);
+
   const handleUpdateArticle = (updated) => {
     setArticles(prev => prev.map(a => a.id === updated.id ? updated : a));
   };
