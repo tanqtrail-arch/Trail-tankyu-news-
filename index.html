@@ -95,7 +95,7 @@ const DATE_TABS = [
 // 🎨 UIコンポーネント
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-function CalendarDropdown({ currentDate, onDateChange, onClose }) {
+function CalendarDropdown({ currentDate, onDateChange, onClose, articles }) {
   const calRef = useRef(null);
 
   useEffect(() => {
@@ -110,7 +110,9 @@ function CalendarDropdown({ currentDate, onDateChange, onClose }) {
   const daysInMonth = 28;
   const startDay = 0; // Sunday
   const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
-  const articleDates = [1, 2, 3, 4, 5]; // days with articles
+  const articleDates = articles
+    ? [...new Set(articles.map(a => parseInt(a.dateKey.slice(2), 10)))]
+    : [];
 
   const cells = [];
   for (let i = 0; i < startDay; i++) cells.push(null);
@@ -225,7 +227,7 @@ function CalendarDropdown({ currentDate, onDateChange, onClose }) {
   );
 }
 
-function Header({ onNav, currentCategory, currentDate, onDateChange }) {
+function Header({ onNav, currentCategory, currentDate, onDateChange, articles }) {
   const [scrolled, setScrolled] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
 
@@ -319,6 +321,7 @@ function Header({ onNav, currentCategory, currentDate, onDateChange }) {
                 currentDate={currentDate}
                 onDateChange={onDateChange}
                 onClose={() => setCalendarOpen(false)}
+                articles={articles}
               />
             )}
           </div>
@@ -1733,6 +1736,7 @@ function App() {
             currentCategory={category}
             currentDate={dateFilter}
             onDateChange={(d) => { setDateFilter(d); setSelectedArticle(null); }}
+            articles={articles}
           />
 
           {!selectedArticle && <HeroSection />}
