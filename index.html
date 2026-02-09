@@ -1797,9 +1797,19 @@ function App() {
   useEffect(() => {
     fetch("./articles.json")
       .then(r => r.json())
-      .then(data => { setArticles(data); setLoading(false); })
+      .then(data => {
+        // publishDate フィルタ：公開日が未来の記事を除外
+        const today = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+        const published = data.filter(a => !a.publishDate || a.publishDate <= today);
+        setArticles(published);
+        setLoading(false);
+      })
       .catch(() => {
-        if (typeof ARTICLES !== "undefined") { setArticles(ARTICLES); }
+        if (typeof ARTICLES !== "undefined") {
+          const today = new Date().toISOString().slice(0, 10);
+          const published = ARTICLES.filter(a => !a.publishDate || a.publishDate <= today);
+          setArticles(published);
+        }
         setLoading(false);
       });
   }, []);
