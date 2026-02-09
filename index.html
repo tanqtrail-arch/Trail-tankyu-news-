@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TRAIL探究ニュース｜探究教室TRAIL</title>
   <meta name="description" content="探究教室TRAILが発信する中学受験・探究教育ニュース。2026年入試速報、注目校ガイド、保護者の声。" />
+  <meta property="og:title" content="TRAIL探究ニュース｜探究教室TRAIL" />
+  <meta property="og:description" content="探究教室TRAILが発信する中学受験・探究教育ニュース。2026年入試速報、注目校ガイド、保護者の声。" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="TRAIL探究ニュース" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="TRAIL探究ニュース｜探究教室TRAIL" />
+  <meta name="twitter:description" content="探究教室TRAILが発信する中学受験・探究教育ニュース。" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔍</text></svg>" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -43,6 +50,46 @@ const { useState, useEffect, useRef } = React;
 // { type: "table", title: "表タイトル", headers: [...], rows: [[...], ...] }
 // { type: "highlight", items: [{ school: "学校名", detail: "説明" }] }
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+// 読了時間を計算（日本語: 約500文字/分）
+function getReadingTime(article) {
+  if (!article || !article.body) return 1;
+  let chars = 0;
+  article.body.forEach(b => {
+    if (b.content) chars += b.content.length;
+    if (b.items) b.items.forEach(it => { chars += typeof it === "string" ? it.length : (it.detail || "").length; });
+    if (b.rows) b.rows.forEach(r => r.forEach(c => { chars += (c || "").length; }));
+  });
+  if (article.tankyuPoint) chars += article.tankyuPoint.length;
+  if (article.oyakoTalk) chars += article.oyakoTalk.length;
+  return Math.max(1, Math.round(chars / 500));
+}
+
+// OGPメタタグを動的に更新
+function updateOGP(article) {
+  const setMeta = (prop, content) => {
+    const attr = prop.startsWith("og:") || prop.startsWith("article:") ? "property" : "name";
+    let el = document.querySelector(`meta[${attr}="${prop}"]`);
+    if (!el) { el = document.createElement("meta"); el.setAttribute(attr, prop); document.head.appendChild(el); }
+    el.setAttribute("content", content);
+  };
+  if (article) {
+    const label = CATEGORY_LABELS[article.category] || "";
+    setMeta("og:title", `${article.title}｜TRAIL探究ニュース`);
+    setMeta("og:description", article.summary);
+    setMeta("og:type", "article");
+    setMeta("twitter:title", `${article.title}｜TRAIL探究ニュース`);
+    setMeta("twitter:description", article.summary);
+    document.title = `${article.title}｜TRAIL探究ニュース`;
+  } else {
+    setMeta("og:title", "TRAIL探究ニュース｜探究教室TRAIL");
+    setMeta("og:description", "探究教室TRAILが発信する中学受験・探究教育ニュース。2026年入試速報、注目校ガイド、保護者の声。");
+    setMeta("og:type", "website");
+    setMeta("twitter:title", "TRAIL探究ニュース｜探究教室TRAIL");
+    setMeta("twitter:description", "探究教室TRAILが発信する中学受験・探究教育ニュース。");
+    document.title = "TRAIL探究ニュース｜探究教室TRAIL";
+  }
+}
 
 const SITE = {
   name: "トレイル探究ニュース",
@@ -85,6 +132,7 @@ const DATE_TABS = [
   { key: "0206", label: "2/6" },
   { key: "0207", label: "2/7" },
   { key: "0208", label: "2/8" },
+  { key: "0209", label: "2/9" },
 ];
 
 // ━━━ 記事データ（articles.jsonから読み込み） ━━━━━━━━━━━━━━━━━━━━
@@ -408,7 +456,7 @@ function HeroSection() {
   );
 }
 
-function ArticleCard({ article, onSelect, index }) {
+function ArticleCard({ article, onSelect, index, onTagClick }) {
   const [hovered, setHovered] = useState(false);
   const color = CATEGORY_COLORS[article.category] || "#6B5D4A";
   const label = CATEGORY_LABELS[article.category] || "";
@@ -440,6 +488,11 @@ function ArticleCard({ article, onSelect, index }) {
             fontFamily: "'Zen Kaku Gothic New', sans-serif",
             fontSize: 11, color: "#A0947E",
           }}>{article.date}</span>
+          <span style={{
+            fontFamily: "'Zen Kaku Gothic New', sans-serif",
+            fontSize: 10, color: "#A0947E", background: "#F5F0E8",
+            padding: "1px 7px", borderRadius: 8,
+          }}>{getReadingTime(article)}分で読める</span>
         </div>
         <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
           <span style={{ fontSize: 28, lineHeight: 1, flexShrink: 0, marginTop: 2 }}>{article.heroEmoji}</span>
@@ -457,11 +510,15 @@ function ArticleCard({ article, onSelect, index }) {
         </div>
         <div style={{ display: "flex", gap: 6, marginTop: 14, flexWrap: "wrap", alignItems: "center" }}>
           {article.tags.slice(0, 3).map(tag => (
-            <span key={tag} style={{
+            <span key={tag} onClick={e => { e.stopPropagation(); onTagClick && onTagClick(tag); }} style={{
               padding: "2px 9px", borderRadius: 10, background: "#F5F0E8",
               fontFamily: "'Zen Kaku Gothic New', sans-serif",
               fontSize: 10, color: "#8B7355",
-            }}>#{tag}</span>
+              cursor: onTagClick ? "pointer" : "default", transition: "all 0.2s ease",
+            }}
+            onMouseEnter={e => { if (onTagClick) { e.currentTarget.style.background = "#EA580C"; e.currentTarget.style.color = "#fff"; } }}
+            onMouseLeave={e => { e.currentTarget.style.background = "#F5F0E8"; e.currentTarget.style.color = "#8B7355"; }}
+            >#{tag}</span>
           ))}
           <span style={{
             marginLeft: "auto",
@@ -494,6 +551,126 @@ function SpecialBox({ type, title, icon, content }) {
         fontFamily: "'Zen Kaku Gothic New', sans-serif",
         fontSize: 13, lineHeight: 1.8, color: "#2D2416",
       }}>{content}</div>
+    </div>
+  );
+}
+
+// SNS共有ボタン
+function ShareButtons({ article }) {
+  const [copied, setCopied] = useState(false);
+  const url = window.location.href;
+  const text = `${article.title}｜TRAIL探究ニュース`;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const btnStyle = {
+    display: "inline-flex", alignItems: "center", gap: 6,
+    padding: "8px 16px", borderRadius: 20, border: "1px solid #E8E0D4",
+    background: "#fff", cursor: "pointer", transition: "all 0.2s ease",
+    fontFamily: "'Zen Kaku Gothic New', sans-serif", fontSize: 12, fontWeight: 600,
+  };
+
+  return (
+    <div style={{
+      display: "flex", gap: 8, flexWrap: "wrap",
+      margin: "24px 0", padding: "18px 0", borderTop: "1px solid #E8E0D4",
+    }}>
+      <span style={{
+        fontFamily: "'Zen Kaku Gothic New', sans-serif",
+        fontSize: 11, fontWeight: 700, color: "#8B7355",
+        display: "flex", alignItems: "center", marginRight: 4,
+      }}>共有</span>
+      <button onClick={() => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, "_blank")}
+        style={{ ...btnStyle, color: "#1DA1F2" }}
+        onMouseEnter={e => { e.currentTarget.style.background = "#E8F5FE"; e.currentTarget.style.borderColor = "#1DA1F2"; }}
+        onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.borderColor = "#E8E0D4"; }}
+      >𝕏 ポスト</button>
+      <button onClick={() => window.open(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(url)}`, "_blank")}
+        style={{ ...btnStyle, color: "#06C755" }}
+        onMouseEnter={e => { e.currentTarget.style.background = "#E6F9ED"; e.currentTarget.style.borderColor = "#06C755"; }}
+        onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.borderColor = "#E8E0D4"; }}
+      >LINE</button>
+      <button onClick={handleCopy}
+        style={{ ...btnStyle, color: copied ? "#059669" : "#6B5D4A" }}
+        onMouseEnter={e => { e.currentTarget.style.background = "#F5F0E8"; }}
+        onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}
+      >{copied ? "コピーしました!" : "URLをコピー"}</button>
+    </div>
+  );
+}
+
+// 関連記事コンポーネント
+function RelatedArticles({ currentArticle, articles, onSelect }) {
+  if (!articles || articles.length === 0) return null;
+
+  // 同カテゴリ & タグの一致度でスコアリング
+  const scored = articles
+    .filter(a => a.id !== currentArticle.id)
+    .map(a => {
+      let score = 0;
+      if (a.category === currentArticle.category) score += 3;
+      if (a.tags && currentArticle.tags) {
+        const overlap = a.tags.filter(t => currentArticle.tags.includes(t)).length;
+        score += overlap * 2;
+      }
+      return { article: a, score };
+    })
+    .filter(s => s.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3);
+
+  if (scored.length === 0) return null;
+
+  return (
+    <div style={{
+      marginTop: 28, padding: "22px 20px",
+      background: "#F9F4EC", borderRadius: 16,
+    }}>
+      <div style={{
+        fontFamily: "'Zen Kaku Gothic New', sans-serif",
+        fontSize: 13, fontWeight: 800, color: "#1A1207", marginBottom: 14,
+      }}>📎 関連記事</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {scored.map(({ article }) => {
+          const color = CATEGORY_COLORS[article.category] || "#6B5D4A";
+          const label = CATEGORY_LABELS[article.category] || "";
+          return (
+            <div key={article.id} onClick={() => onSelect(article)}
+              style={{
+                display: "flex", gap: 10, alignItems: "center",
+                padding: "12px 14px", background: "#fff", borderRadius: 12,
+                border: "1px solid #E8E0D4", cursor: "pointer", transition: "all 0.2s ease",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "#F97316"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(249,115,22,0.1)"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "#E8E0D4"; e.currentTarget.style.boxShadow = "none"; }}
+            >
+              <span style={{ fontSize: 22, flexShrink: 0 }}>{article.heroEmoji}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
+                  <span style={{
+                    padding: "1px 7px", borderRadius: 8, background: `${color}12`, color,
+                    fontFamily: "'Zen Kaku Gothic New', sans-serif", fontSize: 9, fontWeight: 700,
+                  }}>{label}</span>
+                  <span style={{
+                    fontFamily: "'Zen Kaku Gothic New', sans-serif", fontSize: 10, color: "#A0947E",
+                  }}>{article.date}</span>
+                </div>
+                <div style={{
+                  fontFamily: "'Zen Kaku Gothic New', sans-serif", fontSize: 12, fontWeight: 700,
+                  color: "#1A1207", lineHeight: 1.4,
+                  overflow: "hidden", textOverflow: "ellipsis",
+                  display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+                }}>{article.title}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -803,7 +980,7 @@ function CommentSection({ articleId }) {
   );
 }
 
-function ArticleDetail({ article, onBack, showComments = false }) {
+function ArticleDetail({ article, onBack, showComments = false, articles, onSelect, onTagClick }) {
   const topRef = useRef(null);
   const color = CATEGORY_COLORS[article.category] || "#6B5D4A";
   const label = CATEGORY_LABELS[article.category] || "";
@@ -1042,6 +1219,11 @@ function ArticleDetail({ article, onBack, showComments = false }) {
                 fontSize: 10, color: "#8B7355",
               }}>「考える力」を育てる視点でニュースを解説</div>
             </div>
+            <span style={{
+              marginLeft: "auto", padding: "4px 10px", borderRadius: 10,
+              background: "#F5F0E8", fontFamily: "'Zen Kaku Gothic New', sans-serif",
+              fontSize: 11, color: "#8B7355", fontWeight: 600, whiteSpace: "nowrap",
+            }}>{getReadingTime(article)}分で読める</span>
           </div>
 
           {/* Body */}
@@ -1067,15 +1249,25 @@ function ArticleDetail({ article, onBack, showComments = false }) {
             marginTop: 24, paddingTop: 18, borderTop: "1px solid #E8E0D4",
           }}>
             {article.tags.map(tag => (
-              <span key={tag} style={{
+              <span key={tag} onClick={() => onTagClick && onTagClick(tag)} style={{
                 padding: "4px 11px", borderRadius: 12, background: "#F5F0E8",
                 fontFamily: "'Zen Kaku Gothic New', sans-serif",
                 fontSize: 11, color: "#8B7355",
-              }}>#{tag}</span>
+                cursor: onTagClick ? "pointer" : "default", transition: "all 0.2s ease",
+              }}
+              onMouseEnter={e => { if (onTagClick) { e.currentTarget.style.background = "#EA580C"; e.currentTarget.style.color = "#fff"; } }}
+              onMouseLeave={e => { e.currentTarget.style.background = "#F5F0E8"; e.currentTarget.style.color = "#8B7355"; }}
+              >#{tag}</span>
             ))}
           </div>
+
+          {/* Share buttons */}
+          <ShareButtons article={article} />
         </div>
       </div>
+
+      {/* Related articles */}
+      <RelatedArticles currentArticle={article} articles={articles} onSelect={onSelect} />
 
       {/* Comments & Reactions */}
       {showComments && <CommentSection articleId={article.id} />}
@@ -1596,6 +1788,7 @@ function App() {
   const [category, setCategory] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
   const [selectedArticle, setSelectedArticle] = useState(null);
+  const [tagFilter, setTagFilter] = useState(null);
   const [dashAuth, setDashAuth] = useState(false);
   const [dashPw, setDashPw] = useState("");
   const [dashPwErr, setDashPwErr] = useState(false);
@@ -1606,11 +1799,13 @@ function App() {
       .then(r => r.json())
       .then(data => { setArticles(data); setLoading(false); })
       .catch(() => {
-        // Fallback: try embedded ARTICLES if available
         if (typeof ARTICLES !== "undefined") { setArticles(ARTICLES); }
         setLoading(false);
       });
   }, []);
+
+  // OGP更新
+  useEffect(() => { updateOGP(selectedArticle); }, [selectedArticle]);
 
   const handleDashLogin = () => {
     if (dashPw === DASH_PW) { setDashAuth(true); setDashPwErr(false); setMode("dashboard"); }
@@ -1620,8 +1815,16 @@ function App() {
   const filteredArticles = articles.filter(a => {
     if (category !== "all" && a.category !== category) return false;
     if (dateFilter !== "all" && a.dateKey !== dateFilter) return false;
+    if (tagFilter && (!a.tags || !a.tags.includes(tagFilter))) return false;
     return true;
   });
+
+  const handleTagClick = (tag) => {
+    setTagFilter(tag);
+    setSelectedArticle(null);
+    setCategory("all");
+    setDateFilter("all");
+  };
 
   const handleUpdateArticle = (updated) => {
     setArticles(prev => prev.map(a => a.id === updated.id ? updated : a));
@@ -1755,7 +1958,7 @@ function App() {
             }}>
               <div>
                 {selectedArticle ? (
-                  <ArticleDetail article={selectedArticle} onBack={() => setSelectedArticle(null)} showComments={true} />
+                  <ArticleDetail article={selectedArticle} onBack={() => setSelectedArticle(null)} showComments={true} articles={articles} onSelect={setSelectedArticle} onTagClick={handleTagClick} />
                 ) : (
                   <>
                     <div style={{
@@ -1763,13 +1966,21 @@ function App() {
                       fontSize: 12, fontWeight: 700, color: "#8B7355",
                       marginBottom: 14, letterSpacing: "0.05em",
                     }}>
-                      {category === "all" ? "📰 最新ニュース" : NAV_CATEGORIES.find(c => c.id === category)?.icon + " " + NAV_CATEGORIES.find(c => c.id === category)?.label}
+                      {tagFilter ? `🏷 #${tagFilter}` : category === "all" ? "📰 最新ニュース" : NAV_CATEGORIES.find(c => c.id === category)?.icon + " " + NAV_CATEGORIES.find(c => c.id === category)?.label}
                       {dateFilter !== "all" && ` — ${DATE_TABS.find(d => d.key === dateFilter)?.label}`}
                       <span style={{ fontWeight: 400, marginLeft: 8 }}>{filteredArticles.length}件</span>
+                      {tagFilter && (
+                        <button onClick={() => setTagFilter(null)} style={{
+                          marginLeft: 8, padding: "2px 10px", borderRadius: 10,
+                          border: "1px solid #D4C5AE", background: "#FFFCF7",
+                          cursor: "pointer", fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                          fontSize: 10, fontWeight: 600, color: "#8B7355",
+                        }}>× 解除</button>
+                      )}
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                       {filteredArticles.map((article, i) => (
-                        <ArticleCard key={article.id} article={article} onSelect={setSelectedArticle} index={i} />
+                        <ArticleCard key={article.id} article={article} onSelect={setSelectedArticle} index={i} onTagClick={handleTagClick} />
                       ))}
                       {filteredArticles.length === 0 && (
                         <div style={{
