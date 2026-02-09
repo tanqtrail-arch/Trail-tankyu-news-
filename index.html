@@ -82,9 +82,12 @@ const DATE_TABS = [
   { key: "0203", label: "2/3" },
   { key: "0204", label: "2/4" },
   { key: "0205", label: "2/5" },
+  { key: "0206", label: "2/6" },
+  { key: "0207", label: "2/7" },
+  { key: "0208", label: "2/8" },
 ];
 
-// ━━━ 全25記事データ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━ 記事データ（articles.jsonから読み込み） ━━━━━━━━━━━━━━━━━━━━
 
 
 
@@ -92,7 +95,7 @@ const DATE_TABS = [
 // 🎨 UIコンポーネント
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-function CalendarDropdown({ currentDate, onDateChange, onClose }) {
+function CalendarDropdown({ currentDate, onDateChange, onClose, articles }) {
   const calRef = useRef(null);
 
   useEffect(() => {
@@ -107,7 +110,9 @@ function CalendarDropdown({ currentDate, onDateChange, onClose }) {
   const daysInMonth = 28;
   const startDay = 0; // Sunday
   const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
-  const articleDates = [1, 2, 3, 4, 5]; // days with articles
+  const articleDates = articles
+    ? [...new Set(articles.map(a => parseInt(a.dateKey.slice(2), 10)))]
+    : [];
 
   const cells = [];
   for (let i = 0; i < startDay; i++) cells.push(null);
@@ -222,7 +227,7 @@ function CalendarDropdown({ currentDate, onDateChange, onClose }) {
   );
 }
 
-function Header({ onNav, currentCategory, currentDate, onDateChange }) {
+function Header({ onNav, currentCategory, currentDate, onDateChange, articles }) {
   const [scrolled, setScrolled] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
 
@@ -316,6 +321,7 @@ function Header({ onNav, currentCategory, currentDate, onDateChange }) {
                 currentDate={currentDate}
                 onDateChange={onDateChange}
                 onClose={() => setCalendarOpen(false)}
+                articles={articles}
               />
             )}
           </div>
@@ -1077,7 +1083,13 @@ function ArticleDetail({ article, onBack, showComments = false }) {
   );
 }
 
-function Sidebar() {
+function Sidebar({ articles }) {
+  const articleCount = articles ? articles.length : 0;
+  const dateKeys = articles ? [...new Set(articles.map(a => a.dateKey))].sort() : [];
+  const firstDate = dateKeys.length > 0 ? `2/${parseInt(dateKeys[0].slice(2), 10)}` : "";
+  const lastDate = dateKeys.length > 0 ? `2/${parseInt(dateKeys[dateKeys.length - 1].slice(2), 10)}` : "";
+  const dateRange = firstDate && lastDate ? `（${firstDate}〜${lastDate}）` : "";
+
   return (
     <aside style={{ display: "flex", flexDirection: "column", gap: 18 }}>
       {/* Article count */}
@@ -1090,11 +1102,11 @@ function Sidebar() {
         <div style={{
           fontFamily: "'Zen Kaku Gothic New', sans-serif",
           fontSize: 36, fontWeight: 900, color: "#EA580C",
-        }}>25</div>
+        }}>{articleCount}</div>
         <div style={{
           fontFamily: "'Zen Kaku Gothic New', sans-serif",
           fontSize: 12, color: "#8B7355", fontWeight: 600,
-        }}>記事を公開中（2/1〜2/5）</div>
+        }}>記事を公開中{dateRange}</div>
       </div>
 
       {/* About TRAIL */}
@@ -1730,6 +1742,7 @@ function App() {
             currentCategory={category}
             currentDate={dateFilter}
             onDateChange={(d) => { setDateFilter(d); setSelectedArticle(null); }}
+            articles={articles}
           />
 
           {!selectedArticle && <HeroSection />}
@@ -1771,7 +1784,7 @@ function App() {
                   </>
                 )}
               </div>
-              {!selectedArticle && <Sidebar />}
+              {!selectedArticle && <Sidebar articles={articles} />}
             </div>
           </main>
           <Footer />
