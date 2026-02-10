@@ -135,6 +135,78 @@ const DATE_TABS = [
   { key: "0209", label: "2/9" },
 ];
 
+// ━━━ 探究ナビ（質問ツリー） ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const NAVI_TREE = {
+  root: {
+    message: "こんにちは！今日はどんなことが気になりますか？",
+    options: [
+      { label: "🎯 受験について", next: "juken" },
+      { label: "🏫 学校えらび", next: "school" },
+      { label: "🔍 学び方について", next: "learning" },
+      { label: "🤖 AIと教育", next: "ai" },
+      { label: "👨‍👩‍👧 子育てについて", next: "parenting" },
+    ]
+  },
+  // ── 受験 ──
+  juken: {
+    message: "受験のどんなことが気になりますか？",
+    options: [
+      { label: "📊 志望校の選び方", next: null, tags: ["学校選び", "志望動向", "偏差値", "学校評価", "面倒見", "見極め"] },
+      { label: "✏️ 科目別の対策", next: "juken_subject" },
+      { label: "🗣️ 英語入試について", next: null, tags: ["英語入試", "英語教育", "グローバル", "グローバル教育"] },
+      { label: "🔄 併願・出願戦略", next: null, tags: ["併願", "出願", "安全校", "倍率", "2026入試", "サンデーショック"] },
+    ]
+  },
+  juken_subject: {
+    message: "どの科目・分野が気になりますか？",
+    options: [
+      { label: "📐 算数・図形", next: null, tags: ["算数", "空間認知力", "パズル", "立体切断", "図形問題", "論理的思考"] },
+      { label: "📖 国語・記述", next: null, tags: ["作文", "記述力", "国語", "読解力"] },
+      { label: "🧪 理科・STEM", next: null, tags: ["理系", "STEM", "SSH", "適性検査"] },
+      { label: "🌍 社会・時事", next: null, tags: ["社会", "時事問題", "ニュース", "入試問題", "データ読解"] },
+      { label: "🔤 英語", next: null, tags: ["英語入試", "英語教育", "グローバル"] },
+    ]
+  },
+  // ── 学校えらび ──
+  school: {
+    message: "どんな学校に興味がありますか？",
+    options: [
+      { label: "📍 注目の学校を知りたい", next: null, tags: ["注目校", "新設校", "学校改革", "共学化", "2026入試"] },
+      { label: "🌍 グローバル教育に強い学校", next: null, tags: ["グローバル", "グローバル教育", "留学コース", "カナダ留学", "英語教育", "八雲学園", "品川翔英"] },
+      { label: "🔬 探究・STEAMに強い学校", next: null, tags: ["探究", "探究学習", "STEAM", "STEAM教育", "PBL", "探究型", "聖学院", "ドルトン", "三田国際"] },
+      { label: "💰 中堅校・面倒見がいい学校", next: null, tags: ["中堅校", "面倒見", "見極め", "学校評価", "教育の質", "大学付属校"] },
+    ]
+  },
+  // ── 学び方 ──
+  learning: {
+    message: "学び方のどんなことが知りたいですか？",
+    options: [
+      { label: "🔍 探究学習って何？", next: null, tags: ["探究", "探究的な学び", "探究学習", "文科省", "中教審", "クリエイター型探究", "クリエイター型"] },
+      { label: "🧠 非認知能力を伸ばしたい", next: null, tags: ["非認知能力", "グリット", "考える力", "思考力", "好奇心"] },
+      { label: "🤲 手を動かす学び", next: null, tags: ["パズル", "ウッドクラフト", "手を動かす学び", "身体性認知", "木育", "レゴ"] },
+      { label: "🏠 家庭でできる学び", next: null, tags: ["親子学習", "自由研究", "問いを立てる", "探究ノート", "中学準備", "習慣化", "春休み"] },
+    ]
+  },
+  // ── AI×教育 ──
+  ai: {
+    message: "AI×教育のどんなことが気になりますか？",
+    options: [
+      { label: "🏫 学校のAI活用状況", next: null, tags: ["生成AI", "AI教育", "AI活用", "Chromebook", "ChatGPT", "スタディポケット", "校務DX", "教育DX"] },
+      { label: "💡 AI時代に必要な力", next: null, tags: ["AI時代", "代替されない力", "AI×教育", "手を動かす学び", "考える力", "プログラミング"] },
+      { label: "📋 教育政策・制度変更", next: null, tags: ["学習指導要領", "文科省", "中教審", "情報・技術科", "プログラミング教育", "技術・家庭科", "OECD"] },
+    ]
+  },
+  // ── 子育て ──
+  parenting: {
+    message: "子育てのどんなことが気になりますか？",
+    options: [
+      { label: "💬 親子のコミュニケーション", next: null, tags: ["親子", "保護者の声", "声かけ", "メッセージ", "成長", "価値観"] },
+      { label: "📚 受験期のサポート", next: null, tags: ["親の心構え", "メンタル", "合格発表", "受験後", "保護者向け"] },
+      { label: "🎨 遊び・体験の価値", next: null, tags: ["パズル", "ウッドクラフト", "木育", "非認知能力", "自由研究", "レゴ", "好奇心", "フィンランド教育"] },
+    ]
+  },
+};
+
 // ━━━ 記事データ（articles.jsonから読み込み） ━━━━━━━━━━━━━━━━━━━━
 
 
@@ -1833,6 +1905,271 @@ function Dashboard({ articles, onUpdateArticle }) {
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 🧭 探究ナビ — チャット式記事ナビゲーション
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+function TankyuNavi({ articles, onSelectArticle }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [history, setHistory] = useState([]);
+  const [currentKey, setCurrentKey] = useState("root");
+  const [results, setResults] = useState(null);
+  const chatEndRef = useRef(null);
+
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [history, results, isOpen]);
+
+  const currentNode = NAVI_TREE[currentKey];
+
+  const searchArticles = (tags) => {
+    return articles.map(article => {
+      const aTags = article.tags || [];
+      let score = 0;
+      tags.forEach(tag => {
+        if (aTags.includes(tag)) score += 2;
+      });
+      return { article, score };
+    })
+    .filter(s => s.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5);
+  };
+
+  const handleSelect = (option) => {
+    setHistory(prev => [...prev, { botMessage: currentNode.message, userChoice: option.label }]);
+    if (option.next) {
+      setCurrentKey(option.next);
+    } else {
+      setResults(searchArticles(option.tags));
+    }
+  };
+
+  const restart = () => {
+    setHistory([]);
+    setCurrentKey("root");
+    setResults(null);
+  };
+
+  const close = () => {
+    setIsOpen(false);
+    restart();
+  };
+
+  const font = "'Zen Kaku Gothic New', sans-serif";
+
+  if (!isOpen) {
+    return (
+      <div style={{ maxWidth: 960, margin: "0 auto", padding: "16px 20px 0" }}>
+        <button onClick={() => setIsOpen(true)} style={{
+          width: "100%", padding: "14px 20px",
+          background: "linear-gradient(135deg, #FFF7ED 0%, #FEF3E2 100%)",
+          border: "1px solid #F6D9A0",
+          borderRadius: 14, cursor: "pointer",
+          display: "flex", alignItems: "center", gap: 10,
+          fontFamily: font, transition: "all 0.2s ease",
+        }}
+        onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 4px 16px rgba(249,115,22,0.15)"; e.currentTarget.style.borderColor = "#F97316"; }}
+        onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "#F6D9A0"; }}
+        >
+          <span style={{ fontSize: 22 }}>🧭</span>
+          <div style={{ textAlign: "left", flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#1A1207" }}>探究ナビ</div>
+            <div style={{ fontSize: 11, color: "#8B7355", marginTop: 1 }}>気になるテーマから記事をさがそう</div>
+          </div>
+          <span style={{ fontSize: 11, color: "#F97316", fontWeight: 700 }}>始める →</span>
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ maxWidth: 960, margin: "0 auto", padding: "16px 20px 0" }}>
+      <div style={{
+        background: "#FFF", border: "1px solid #E8E0D4",
+        borderRadius: 16, overflow: "hidden",
+        boxShadow: "0 4px 20px rgba(26,18,7,0.08)",
+      }}>
+        {/* Header */}
+        <div style={{
+          padding: "12px 16px",
+          background: "linear-gradient(135deg, #1A1207 0%, #2D2415 100%)",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 18 }}>🧭</span>
+            <span style={{ fontFamily: font, fontSize: 14, fontWeight: 700, color: "#FFF" }}>探究ナビ</span>
+          </div>
+          <button onClick={close} style={{
+            background: "rgba(255,255,255,0.15)", border: "none",
+            borderRadius: 8, padding: "4px 12px", cursor: "pointer",
+            fontFamily: font, fontSize: 11, color: "#D4C5AE",
+          }}>✕ 閉じる</button>
+        </div>
+
+        {/* Chat area */}
+        <div style={{
+          padding: "16px", maxHeight: 420, overflowY: "auto",
+          background: "#FEFCF9",
+        }}>
+          {/* History */}
+          {history.map((h, i) => (
+            <div key={i}>
+              {/* Bot message */}
+              <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                <div style={{
+                  width: 28, height: 28, borderRadius: "50%",
+                  background: "#F97316", display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 14, flexShrink: 0,
+                }}>🧭</div>
+                <div style={{
+                  background: "#FFF7ED", border: "1px solid #FDE6CC",
+                  borderRadius: "4px 14px 14px 14px", padding: "10px 14px",
+                  fontFamily: font, fontSize: 13, color: "#1A1207", lineHeight: 1.6,
+                  maxWidth: "80%",
+                }}>{h.botMessage}</div>
+              </div>
+              {/* User choice */}
+              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 14 }}>
+                <div style={{
+                  background: "#1A1207", color: "#FFF",
+                  borderRadius: "14px 4px 14px 14px", padding: "8px 16px",
+                  fontFamily: font, fontSize: 13, fontWeight: 600,
+                  maxWidth: "80%",
+                }}>{h.userChoice}</div>
+              </div>
+            </div>
+          ))}
+
+          {/* Current step */}
+          {!results && currentNode && (
+            <div>
+              <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                <div style={{
+                  width: 28, height: 28, borderRadius: "50%",
+                  background: "#F97316", display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 14, flexShrink: 0,
+                }}>🧭</div>
+                <div style={{
+                  background: "#FFF7ED", border: "1px solid #FDE6CC",
+                  borderRadius: "4px 14px 14px 14px", padding: "10px 14px",
+                  fontFamily: font, fontSize: 13, color: "#1A1207", lineHeight: 1.6,
+                  maxWidth: "80%",
+                }}>{currentNode.message}</div>
+              </div>
+              <div style={{
+                display: "flex", flexWrap: "wrap", gap: 8,
+                paddingLeft: 36, marginBottom: 8,
+              }}>
+                {currentNode.options.map((opt, j) => (
+                  <button key={j} onClick={() => handleSelect(opt)} style={{
+                    padding: "8px 16px", borderRadius: 20,
+                    border: "1px solid #E8E0D4",
+                    background: "#FFF", cursor: "pointer",
+                    fontFamily: font, fontSize: 12, fontWeight: 600,
+                    color: "#1A1207", transition: "all 0.15s ease",
+                    whiteSpace: "nowrap",
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "#FFF7ED"; e.currentTarget.style.borderColor = "#F97316"; e.currentTarget.style.color = "#EA580C"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "#FFF"; e.currentTarget.style.borderColor = "#E8E0D4"; e.currentTarget.style.color = "#1A1207"; }}
+                  >{opt.label}</button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Results */}
+          {results && (
+            <div>
+              <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                <div style={{
+                  width: 28, height: 28, borderRadius: "50%",
+                  background: "#F97316", display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 14, flexShrink: 0,
+                }}>🧭</div>
+                <div style={{
+                  background: "#FFF7ED", border: "1px solid #FDE6CC",
+                  borderRadius: "4px 14px 14px 14px", padding: "10px 14px",
+                  fontFamily: font, fontSize: 13, color: "#1A1207", lineHeight: 1.6,
+                  maxWidth: "80%",
+                }}>
+                  {results.length > 0
+                    ? `おすすめの記事が${results.length}件見つかりました！`
+                    : "ごめんなさい、該当する記事がまだありません。他のテーマも試してみてください。"
+                  }
+                </div>
+              </div>
+
+              {results.length > 0 && (
+                <div style={{ paddingLeft: 36, display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
+                  {results.map(({ article, score }, k) => {
+                    const color = CATEGORY_COLORS[article.category] || "#6B5D4A";
+                    const catLabel = CATEGORY_LABELS[article.category] || "";
+                    return (
+                      <div key={article.id} onClick={() => { onSelectArticle(article); close(); }}
+                        style={{
+                          background: "#FFF", border: "1px solid #E8E0D4",
+                          borderRadius: 12, padding: "12px 14px", cursor: "pointer",
+                          transition: "all 0.2s ease",
+                          animation: `fadeSlideUp 0.3s ease ${k * 0.08}s both`,
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = color; e.currentTarget.style.boxShadow = `0 2px 12px ${color}20`; }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = "#E8E0D4"; e.currentTarget.style.boxShadow = "none"; }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                          <span style={{
+                            padding: "1px 8px", borderRadius: 10,
+                            background: `${color}12`, color,
+                            fontFamily: font, fontSize: 10, fontWeight: 700,
+                          }}>{catLabel}</span>
+                          <span style={{ fontFamily: font, fontSize: 10, color: "#A0947E" }}>{article.date}</span>
+                        </div>
+                        <div style={{
+                          fontFamily: font, fontSize: 13, fontWeight: 700,
+                          color: "#1A1207", lineHeight: 1.5,
+                        }}>
+                          <span style={{ marginRight: 6 }}>{article.heroEmoji}</span>
+                          {article.title}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Action buttons */}
+              <div style={{ paddingLeft: 36, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <button onClick={restart} style={{
+                  padding: "8px 16px", borderRadius: 20,
+                  border: "1px solid #E8E0D4", background: "#FFF",
+                  cursor: "pointer", fontFamily: font, fontSize: 12, fontWeight: 600,
+                  color: "#F97316", transition: "all 0.15s ease",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = "#FFF7ED"; e.currentTarget.style.borderColor = "#F97316"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "#FFF"; e.currentTarget.style.borderColor = "#E8E0D4"; }}
+                >🔄 最初からやり直す</button>
+                <button onClick={close} style={{
+                  padding: "8px 16px", borderRadius: 20,
+                  border: "1px solid #E8E0D4", background: "#FFF",
+                  cursor: "pointer", fontFamily: font, fontSize: 12, fontWeight: 600,
+                  color: "#8B7355", transition: "all 0.15s ease",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = "#F5F0E8"; e.currentTarget.style.borderColor = "#D4C5AE"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "#FFF"; e.currentTarget.style.borderColor = "#E8E0D4"; }}
+                >閉じる</button>
+              </div>
+            </div>
+          )}
+
+          <div ref={chatEndRef} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 🚀 メインApp
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -2015,6 +2352,7 @@ function App() {
           />
 
           {!selectedArticle && <HeroSection />}
+          {!selectedArticle && <TankyuNavi articles={articles} onSelectArticle={setSelectedArticle} />}
 
           <main style={{ maxWidth: 960, margin: "0 auto", padding: "28px 20px 0" }}>
             <div className="main-grid" style={{
