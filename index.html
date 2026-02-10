@@ -135,57 +135,344 @@ const DATE_TABS = [
   { key: "0209", label: "2/9" },
 ];
 
-// ━━━ 探究ナビ（質問ツリー・全3択） ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━ 探究ナビ（質問ツリー・5択×3回） ━━━━━━━━━━━━━━━━━━━━━━━━━━
 const NAVI_TREE = {
+  // ═══ Q1: 大テーマ（5択）═══
   root: {
     message: "こんにちは！今日はどんなことが気になりますか？",
     options: [
-      { label: "🎯 受験・学校えらび", next: "juken" },
+      { label: "🎯 受験・入試のこと", next: "juken" },
+      { label: "🏫 学校えらび", next: "school" },
       { label: "🔍 学び方・探究", next: "learning" },
-      { label: "🤖 AI・子育て", next: "ai_parenting" },
+      { label: "🤖 AIと教育", next: "ai" },
+      { label: "👨‍👩‍👧 子育て・親子", next: "parenting" },
     ]
   },
-  // ── 受験・学校 ──
+  // ═══ Q2: 中テーマ（各5択）═══
   juken: {
-    message: "受験・学校のどんなことが気になりますか？",
+    message: "受験のどんなことが気になりますか？",
     options: [
-      { label: "📊 志望校・併願戦略", next: null, tags: ["学校選び", "志望動向", "偏差値", "学校評価", "面倒見", "見極め", "併願", "出願", "安全校", "倍率", "2026入試", "サンデーショック"] },
-      { label: "✏️ 科目別の対策", next: "juken_subject" },
-      { label: "🏫 注目校・学校情報", next: "school" },
-    ]
-  },
-  juken_subject: {
-    message: "どの科目・分野が気になりますか？",
-    options: [
-      { label: "📐 算数・理数系", next: null, tags: ["算数", "空間認知力", "パズル", "立体切断", "図形問題", "論理的思考", "理系", "STEM", "SSH", "適性検査"] },
-      { label: "📖 国語・社会・記述", next: null, tags: ["作文", "記述力", "国語", "読解力", "社会", "時事問題", "ニュース", "入試問題", "データ読解"] },
-      { label: "🗣️ 英語入試", next: null, tags: ["英語入試", "英語教育", "グローバル", "グローバル教育"] },
+      { label: "📊 志望校の選び方", next: "juken_school" },
+      { label: "✏️ 算数・理数の対策", next: "juken_math" },
+      { label: "📖 国語・記述・英語", next: "juken_lang" },
+      { label: "🔄 併願・出願戦略", next: "juken_strategy" },
+      { label: "📈 入試のトレンド", next: "juken_trend" },
     ]
   },
   school: {
-    message: "どんな学校に興味がありますか？",
+    message: "学校えらびで気になることは？",
     options: [
-      { label: "🌍 グローバル教育に強い学校", next: null, tags: ["グローバル", "グローバル教育", "留学コース", "カナダ留学", "英語教育", "八雲学園", "品川翔英", "注目校", "新設校", "学校改革", "共学化"] },
-      { label: "🔬 探究・STEAMに強い学校", next: null, tags: ["探究", "探究学習", "STEAM", "STEAM教育", "PBL", "探究型", "聖学院", "ドルトン", "三田国際"] },
-      { label: "💰 中堅校・面倒見がいい学校", next: null, tags: ["中堅校", "面倒見", "見極め", "学校評価", "教育の質", "大学付属校"] },
+      { label: "📍 注目の学校・新設校", next: "school_new" },
+      { label: "🌍 グローバル教育", next: "school_global" },
+      { label: "🔬 探究・STEAM教育", next: "school_steam" },
+      { label: "💰 中堅校・面倒見", next: "school_mid" },
+      { label: "🎓 大学付属・進学実績", next: "school_univ" },
     ]
   },
-  // ── 学び方・探究 ──
   learning: {
     message: "学び方のどんなことが知りたいですか？",
     options: [
-      { label: "🔍 探究学習・非認知能力", next: null, tags: ["探究", "探究的な学び", "探究学習", "文科省", "中教審", "クリエイター型探究", "非認知能力", "グリット", "考える力", "思考力", "好奇心"] },
-      { label: "🤲 手を動かす学び", next: null, tags: ["パズル", "ウッドクラフト", "手を動かす学び", "身体性認知", "木育", "レゴ", "空間認知力"] },
-      { label: "🏠 家庭でできる学び", next: null, tags: ["親子学習", "自由研究", "問いを立てる", "探究ノート", "中学準備", "習慣化", "春休み"] },
+      { label: "🔍 探究学習って何？", next: "learn_tankyu" },
+      { label: "🧠 非認知能力・思考力", next: "learn_skill" },
+      { label: "🤲 手を動かす学び", next: "learn_hands" },
+      { label: "🏠 家庭でできる学び", next: "learn_home" },
+      { label: "📚 読解力・記述力", next: "learn_read" },
     ]
   },
-  // ── AI・子育て ──
-  ai_parenting: {
-    message: "AI・子育てのどんなことが気になりますか？",
+  ai: {
+    message: "AI×教育のどんなことが気になりますか？",
     options: [
-      { label: "🤖 AI時代の教育", next: null, tags: ["生成AI", "AI教育", "AI活用", "AI時代", "代替されない力", "AI×教育", "プログラミング", "Chromebook", "ChatGPT", "学習指導要領", "文科省", "教育DX"] },
-      { label: "💬 親子の関わり方", next: null, tags: ["親子", "保護者の声", "声かけ", "メッセージ", "成長", "価値観", "親の心構え", "メンタル", "合格発表", "受験後", "保護者向け"] },
-      { label: "🎨 遊び・体験の価値", next: null, tags: ["パズル", "ウッドクラフト", "木育", "非認知能力", "自由研究", "レゴ", "好奇心", "フィンランド教育"] },
+      { label: "🏫 学校のAI活用", next: "ai_school" },
+      { label: "💡 AI時代に必要な力", next: "ai_skill" },
+      { label: "📋 教育政策の変化", next: "ai_policy" },
+      { label: "💻 プログラミング教育", next: "ai_prog" },
+      { label: "🔮 これからの教育", next: "ai_future" },
+    ]
+  },
+  parenting: {
+    message: "子育てのどんなことが気になりますか？",
+    options: [
+      { label: "💬 親子のコミュニケーション", next: "parent_comm" },
+      { label: "📚 受験期のサポート", next: "parent_juken" },
+      { label: "🎨 遊び・体験の価値", next: "parent_play" },
+      { label: "🧘 メンタル・心構え", next: "parent_mental" },
+      { label: "🌱 子どもの成長", next: "parent_growth" },
+    ]
+  },
+  // ═══ Q3: 具体テーマ（各5択→記事検索）═══
+  // ── 受験 → 志望校 ──
+  juken_school: {
+    message: "志望校選びで特に知りたいことは？",
+    options: [
+      { label: "🏆 偏差値だけじゃない選び方", next: null, tags: ["学校選び", "志望動向", "偏差値", "見極め", "学校評価"] },
+      { label: "👀 面倒見の良さで選ぶ", next: null, tags: ["面倒見", "見極め", "学校評価", "教育の質", "中堅校"] },
+      { label: "📊 志望動向・人気校", next: null, tags: ["志望動向", "2026入試", "倍率", "注目校", "偏差値"] },
+      { label: "🔍 学校説明会の見方", next: null, tags: ["学校選び", "見極め", "学校評価", "面倒見", "教育の質"] },
+      { label: "🤔 共学？別学？", next: null, tags: ["共学化", "学校改革", "学校選び", "注目校", "新設校"] },
+    ]
+  },
+  // ── 受験 → 算数理数 ──
+  juken_math: {
+    message: "算数・理数系でどんなことが気になる？",
+    options: [
+      { label: "📐 図形・空間問題の対策", next: null, tags: ["算数", "空間認知力", "立体切断", "図形問題", "論理的思考"] },
+      { label: "🧩 パズルで算数力UP", next: null, tags: ["パズル", "算数", "論理的思考", "空間認知力", "考える力"] },
+      { label: "🧪 理科・STEM入試", next: null, tags: ["理系", "STEM", "SSH", "適性検査", "探究型"] },
+      { label: "💡 思考力問題への備え", next: null, tags: ["論理的思考", "考える力", "思考力", "適性検査", "算数"] },
+      { label: "🔢 苦手意識の克服", next: null, tags: ["算数", "考える力", "パズル", "空間認知力", "非認知能力"] },
+    ]
+  },
+  // ── 受験 → 国語英語 ──
+  juken_lang: {
+    message: "国語・英語のどんなことが気になる？",
+    options: [
+      { label: "📝 記述力・作文の対策", next: null, tags: ["作文", "記述力", "国語", "読解力", "考える力"] },
+      { label: "📖 読解力を伸ばすには", next: null, tags: ["読解力", "国語", "記述力", "考える力", "思考力"] },
+      { label: "🗣️ 英語入試の最新情報", next: null, tags: ["英語入試", "英語教育", "グローバル", "グローバル教育", "2026入試"] },
+      { label: "🌍 英語4技能をどう鍛える", next: null, tags: ["英語教育", "グローバル教育", "英語入試", "グローバル"] },
+      { label: "📰 時事問題・社会の対策", next: null, tags: ["社会", "時事問題", "ニュース", "入試問題", "データ読解"] },
+    ]
+  },
+  // ── 受験 → 併願戦略 ──
+  juken_strategy: {
+    message: "併願・出願でどんなことが知りたい？",
+    options: [
+      { label: "📋 併願校の組み方", next: null, tags: ["併願", "安全校", "出願", "志望動向", "学校選び"] },
+      { label: "📊 倍率・出願状況", next: null, tags: ["倍率", "出願", "2026入試", "志望動向", "入試問題"] },
+      { label: "🗓️ サンデーショック対策", next: null, tags: ["サンデーショック", "併願", "2026入試", "出願", "倍率"] },
+      { label: "🎯 安全校の選び方", next: null, tags: ["安全校", "併願", "中堅校", "面倒見", "学校選び"] },
+      { label: "✅ 出願スケジュール管理", next: null, tags: ["出願", "併願", "2026入試", "倍率", "安全校"] },
+    ]
+  },
+  // ── 受験 → トレンド ──
+  juken_trend: {
+    message: "入試トレンドでどんなことが気になる？",
+    options: [
+      { label: "📈 2026年入試の傾向", next: null, tags: ["2026入試", "志望動向", "倍率", "入試問題", "注目校"] },
+      { label: "🆕 新しい入試形式", next: null, tags: ["適性検査", "探究型", "英語入試", "2026入試", "入試問題"] },
+      { label: "🏫 注目校の動き", next: null, tags: ["注目校", "新設校", "学校改革", "共学化", "2026入試"] },
+      { label: "🌐 グローバル入試", next: null, tags: ["英語入試", "グローバル", "グローバル教育", "留学コース", "2026入試"] },
+      { label: "📊 データで見る入試", next: null, tags: ["データ読解", "倍率", "志望動向", "偏差値", "2026入試"] },
+    ]
+  },
+  // ── 学校 → 注目校 ──
+  school_new: {
+    message: "注目校のどんな情報が知りたい？",
+    options: [
+      { label: "🆕 新設・改革校", next: null, tags: ["新設校", "学校改革", "共学化", "注目校", "2026入試"] },
+      { label: "📍 話題の学校を知りたい", next: null, tags: ["注目校", "学校改革", "新設校", "志望動向", "2026入試"] },
+      { label: "🔄 共学化した学校", next: null, tags: ["共学化", "学校改革", "注目校", "新設校", "学校選び"] },
+      { label: "🏫 人気上昇中の学校", next: null, tags: ["注目校", "志望動向", "倍率", "2026入試", "学校評価"] },
+      { label: "🎯 穴場の学校", next: null, tags: ["中堅校", "面倒見", "注目校", "安全校", "学校選び"] },
+    ]
+  },
+  // ── 学校 → グローバル ──
+  school_global: {
+    message: "グローバル教育のどんなことが気になる？",
+    options: [
+      { label: "✈️ 留学プログラムがある学校", next: null, tags: ["留学コース", "カナダ留学", "グローバル教育", "グローバル", "八雲学園"] },
+      { label: "🗣️ 英語教育が強い学校", next: null, tags: ["英語教育", "グローバル教育", "英語入試", "品川翔英", "グローバル"] },
+      { label: "🌍 国際バカロレア・海外進学", next: null, tags: ["グローバル", "グローバル教育", "留学コース", "英語教育", "OECD"] },
+      { label: "🏫 具体的な学校名を知りたい", next: null, tags: ["八雲学園", "品川翔英", "三田国際", "グローバル教育", "留学コース"] },
+      { label: "💡 グローバル教育の効果", next: null, tags: ["グローバル教育", "英語教育", "グローバル", "非認知能力", "考える力"] },
+    ]
+  },
+  // ── 学校 → STEAM ──
+  school_steam: {
+    message: "探究・STEAM教育のどんなことが気になる？",
+    options: [
+      { label: "🔬 STEAM教育に強い学校", next: null, tags: ["STEAM", "STEAM教育", "探究型", "聖学院", "ドルトン"] },
+      { label: "🔍 探究学習が充実した学校", next: null, tags: ["探究", "探究学習", "PBL", "探究型", "三田国際"] },
+      { label: "🧪 SSH・理数教育", next: null, tags: ["SSH", "STEM", "理系", "STEAM教育", "探究型"] },
+      { label: "🏫 具体的な学校名を知りたい", next: null, tags: ["聖学院", "ドルトン", "三田国際", "STEAM教育", "探究型"] },
+      { label: "💡 探究型入試って何？", next: null, tags: ["探究型", "適性検査", "探究学習", "PBL", "入試問題"] },
+    ]
+  },
+  // ── 学校 → 中堅校 ──
+  school_mid: {
+    message: "中堅校・面倒見のどんなことが知りたい？",
+    options: [
+      { label: "🤝 面倒見が良い学校", next: null, tags: ["面倒見", "見極め", "学校評価", "教育の質", "中堅校"] },
+      { label: "📊 中堅校の見極め方", next: null, tags: ["中堅校", "見極め", "学校評価", "面倒見", "教育の質"] },
+      { label: "🎯 偏差値50前後のおすすめ", next: null, tags: ["中堅校", "面倒見", "安全校", "学校選び", "偏差値"] },
+      { label: "👀 教育の質を見抜くには", next: null, tags: ["教育の質", "学校評価", "見極め", "面倒見", "学校選び"] },
+      { label: "💡 中堅校ならではの魅力", next: null, tags: ["中堅校", "面倒見", "教育の質", "非認知能力", "探究学習"] },
+    ]
+  },
+  // ── 学校 → 大学付属 ──
+  school_univ: {
+    message: "大学付属・進学でどんなことが知りたい？",
+    options: [
+      { label: "🎓 大学付属校の特徴", next: null, tags: ["大学付属校", "学校選び", "学校評価", "教育の質", "面倒見"] },
+      { label: "📊 進学実績の見方", next: null, tags: ["学校評価", "偏差値", "志望動向", "大学付属校", "教育の質"] },
+      { label: "🤔 付属か進学校か", next: null, tags: ["大学付属校", "学校選び", "見極め", "学校評価", "偏差値"] },
+      { label: "🔍 探究型の付属校", next: null, tags: ["大学付属校", "探究学習", "探究型", "PBL", "教育の質"] },
+      { label: "💰 コスパの良い学校", next: null, tags: ["中堅校", "大学付属校", "面倒見", "教育の質", "学校選び"] },
+    ]
+  },
+  // ── 学び → 探究 ──
+  learn_tankyu: {
+    message: "探究学習のどんなことが知りたい？",
+    options: [
+      { label: "🔍 探究学習の基本", next: null, tags: ["探究", "探究的な学び", "探究学習", "文科省", "中教審"] },
+      { label: "🎨 クリエイター型の探究", next: null, tags: ["クリエイター型探究", "クリエイター型", "探究学習", "探究", "PBL"] },
+      { label: "🏫 学校での探究の実態", next: null, tags: ["探究学習", "探究型", "PBL", "STEAM教育", "探究"] },
+      { label: "📋 文科省の方針", next: null, tags: ["文科省", "中教審", "学習指導要領", "探究的な学び", "探究学習"] },
+      { label: "🌍 海外の探究教育", next: null, tags: ["フィンランド教育", "OECD", "探究学習", "グローバル教育", "PBL"] },
+    ]
+  },
+  // ── 学び → スキル ──
+  learn_skill: {
+    message: "どんな力を伸ばしたい？",
+    options: [
+      { label: "🧠 考える力・思考力", next: null, tags: ["考える力", "思考力", "論理的思考", "非認知能力", "探究学習"] },
+      { label: "💪 グリット・やり抜く力", next: null, tags: ["グリット", "非認知能力", "考える力", "好奇心", "成長"] },
+      { label: "❓ 好奇心・探究心", next: null, tags: ["好奇心", "探究", "問いを立てる", "探究的な学び", "非認知能力"] },
+      { label: "🎯 非認知能力とは？", next: null, tags: ["非認知能力", "グリット", "考える力", "思考力", "好奇心"] },
+      { label: "📊 これからの時代の学力", next: null, tags: ["思考力", "考える力", "AI時代", "代替されない力", "非認知能力"] },
+    ]
+  },
+  // ── 学び → 手を動かす ──
+  learn_hands: {
+    message: "手を動かす学びのどんなことが知りたい？",
+    options: [
+      { label: "🧩 パズルの学習効果", next: null, tags: ["パズル", "空間認知力", "論理的思考", "算数", "考える力"] },
+      { label: "🪵 ウッドクラフト・木育", next: null, tags: ["ウッドクラフト", "木育", "手を動かす学び", "身体性認知", "非認知能力"] },
+      { label: "🧱 レゴ・ブロック遊び", next: null, tags: ["レゴ", "空間認知力", "パズル", "手を動かす学び", "考える力"] },
+      { label: "🖐️ 身体性認知って何？", next: null, tags: ["身体性認知", "手を動かす学び", "非認知能力", "ウッドクラフト", "パズル"] },
+      { label: "🎓 受験にも活きる？", next: null, tags: ["パズル", "算数", "空間認知力", "手を動かす学び", "考える力"] },
+    ]
+  },
+  // ── 学び → 家庭 ──
+  learn_home: {
+    message: "家庭学習のどんなことが知りたい？",
+    options: [
+      { label: "🏠 親子でできる探究", next: null, tags: ["親子学習", "探究ノート", "問いを立てる", "自由研究", "親子"] },
+      { label: "📝 自由研究のヒント", next: null, tags: ["自由研究", "探究ノート", "問いを立てる", "探究", "好奇心"] },
+      { label: "📅 学習習慣のつくり方", next: null, tags: ["習慣化", "中学準備", "親子学習", "考える力", "探究ノート"] },
+      { label: "🌸 春休み・長期休みの過ごし方", next: null, tags: ["春休み", "自由研究", "中学準備", "親子学習", "習慣化"] },
+      { label: "🎒 中学準備として", next: null, tags: ["中学準備", "習慣化", "親子学習", "探究ノート", "考える力"] },
+    ]
+  },
+  // ── 学び → 読解 ──
+  learn_read: {
+    message: "読解力・記述力のどんなことが知りたい？",
+    options: [
+      { label: "📖 読解力の伸ばし方", next: null, tags: ["読解力", "国語", "考える力", "思考力", "記述力"] },
+      { label: "✏️ 記述・作文の練習法", next: null, tags: ["記述力", "作文", "国語", "読解力", "考える力"] },
+      { label: "📰 ニュースを読む力", next: null, tags: ["時事問題", "ニュース", "データ読解", "社会", "考える力"] },
+      { label: "💡 考えを言葉にする力", next: null, tags: ["記述力", "考える力", "思考力", "作文", "問いを立てる"] },
+      { label: "📊 データを読み解く力", next: null, tags: ["データ読解", "思考力", "算数", "社会", "論理的思考"] },
+    ]
+  },
+  // ── AI → 学校活用 ──
+  ai_school: {
+    message: "学校のAI活用でどんなことが知りたい？",
+    options: [
+      { label: "💻 授業でのAI活用", next: null, tags: ["AI活用", "生成AI", "AI教育", "Chromebook", "教育DX"] },
+      { label: "🤖 ChatGPTと学校", next: null, tags: ["ChatGPT", "生成AI", "AI活用", "AI教育", "教育DX"] },
+      { label: "📱 EdTech・学習ツール", next: null, tags: ["スタディポケット", "Chromebook", "AI活用", "教育DX", "AI教育"] },
+      { label: "🏫 校務DX・先生の変化", next: null, tags: ["校務DX", "教育DX", "AI活用", "生成AI", "文科省"] },
+      { label: "📊 導入状況・データ", next: null, tags: ["AI教育", "AI活用", "教育DX", "文科省", "OECD"] },
+    ]
+  },
+  // ── AI → 必要な力 ──
+  ai_skill: {
+    message: "AI時代にどんな力が必要だと思う？",
+    options: [
+      { label: "🧠 AIに代替されない力", next: null, tags: ["代替されない力", "AI時代", "考える力", "非認知能力", "思考力"] },
+      { label: "🤲 手を動かす学びの価値", next: null, tags: ["手を動かす学び", "AI×教育", "身体性認知", "AI時代", "代替されない力"] },
+      { label: "💡 創造力・問いを立てる力", next: null, tags: ["問いを立てる", "考える力", "AI時代", "クリエイター型探究", "好奇心"] },
+      { label: "🤝 コミュニケーション力", next: null, tags: ["非認知能力", "AI時代", "代替されない力", "考える力", "グリット"] },
+      { label: "🔍 探究する力", next: null, tags: ["探究", "探究学習", "AI×教育", "AI時代", "考える力"] },
+    ]
+  },
+  // ── AI → 政策 ──
+  ai_policy: {
+    message: "教育政策のどんなことが気になる？",
+    options: [
+      { label: "📋 学習指導要領の変化", next: null, tags: ["学習指導要領", "文科省", "中教審", "探究的な学び", "情報・技術科"] },
+      { label: "🏛️ 文科省・中教審の動き", next: null, tags: ["文科省", "中教審", "学習指導要領", "教育DX", "AI教育"] },
+      { label: "🌍 OECDなど海外の動向", next: null, tags: ["OECD", "フィンランド教育", "グローバル教育", "文科省", "STEM"] },
+      { label: "💻 情報・技術科の新設", next: null, tags: ["情報・技術科", "プログラミング教育", "技術・家庭科", "学習指導要領", "文科省"] },
+      { label: "📊 日本の教育の課題", next: null, tags: ["文科省", "OECD", "中教審", "教育DX", "学習指導要領"] },
+    ]
+  },
+  // ── AI → プログラミング ──
+  ai_prog: {
+    message: "プログラミング教育のどんなことが知りたい？",
+    options: [
+      { label: "🖥️ 小学校のプログラミング", next: null, tags: ["プログラミング教育", "プログラミング", "文科省", "学習指導要領", "STEM"] },
+      { label: "🧪 STEM教育との関係", next: null, tags: ["STEM", "STEAM", "プログラミング", "SSH", "理系"] },
+      { label: "🎮 楽しく学べる方法", next: null, tags: ["プログラミング", "レゴ", "パズル", "考える力", "論理的思考"] },
+      { label: "📋 入試への影響", next: null, tags: ["プログラミング教育", "適性検査", "探究型", "情報・技術科", "2026入試"] },
+      { label: "🤖 AIリテラシー", next: null, tags: ["AI教育", "AI活用", "生成AI", "AI時代", "プログラミング"] },
+    ]
+  },
+  // ── AI → 未来 ──
+  ai_future: {
+    message: "これからの教育でどんなことが気になる？",
+    options: [
+      { label: "🔮 10年後の学校", next: null, tags: ["AI時代", "教育DX", "AI教育", "学習指導要領", "文科省"] },
+      { label: "🌍 世界の教育トレンド", next: null, tags: ["OECD", "フィンランド教育", "グローバル教育", "STEM", "PBL"] },
+      { label: "🧠 人間にしかできない学び", next: null, tags: ["代替されない力", "AI時代", "手を動かす学び", "非認知能力", "身体性認知"] },
+      { label: "📱 テクノロジーと学び", next: null, tags: ["教育DX", "AI活用", "Chromebook", "スタディポケット", "プログラミング"] },
+      { label: "💡 探究とAIの融合", next: null, tags: ["AI×教育", "探究学習", "AI時代", "クリエイター型探究", "考える力"] },
+    ]
+  },
+  // ── 子育て → コミュニケーション ──
+  parent_comm: {
+    message: "親子のコミュニケーションでどんなことが知りたい？",
+    options: [
+      { label: "🗣️ 声かけ・言葉がけ", next: null, tags: ["声かけ", "親子", "メッセージ", "保護者の声", "成長"] },
+      { label: "💬 考えを引き出す対話", next: null, tags: ["親子", "問いを立てる", "考える力", "声かけ", "探究"] },
+      { label: "📚 一緒にニュースを読む", next: null, tags: ["親子", "ニュース", "時事問題", "データ読解", "親子学習"] },
+      { label: "🤝 価値観を伝える", next: null, tags: ["価値観", "メッセージ", "親子", "成長", "保護者の声"] },
+      { label: "👂 子どもの話を聴く", next: null, tags: ["親子", "声かけ", "保護者の声", "成長", "非認知能力"] },
+    ]
+  },
+  // ── 子育て → 受験サポート ──
+  parent_juken: {
+    message: "受験期のサポートでどんなことが知りたい？",
+    options: [
+      { label: "🧘 親の心構え", next: null, tags: ["親の心構え", "保護者向け", "メンタル", "受験後", "親子"] },
+      { label: "📋 合格発表の前後", next: null, tags: ["合格発表", "受験後", "メンタル", "親の心構え", "保護者向け"] },
+      { label: "💪 子どものメンタルケア", next: null, tags: ["メンタル", "親の心構え", "声かけ", "成長", "非認知能力"] },
+      { label: "📅 日々のスケジュール管理", next: null, tags: ["保護者向け", "親の心構え", "習慣化", "親子学習", "中学準備"] },
+      { label: "🤔 塾とのつきあい方", next: null, tags: ["保護者向け", "親の心構え", "学校選び", "親子", "見極め"] },
+    ]
+  },
+  // ── 子育て → 遊び ──
+  parent_play: {
+    message: "遊び・体験のどんなことが知りたい？",
+    options: [
+      { label: "🧩 パズル遊びの効果", next: null, tags: ["パズル", "空間認知力", "論理的思考", "算数", "好奇心"] },
+      { label: "🪵 ウッドクラフト・工作", next: null, tags: ["ウッドクラフト", "木育", "手を動かす学び", "身体性認知", "非認知能力"] },
+      { label: "🧱 レゴ・ブロック", next: null, tags: ["レゴ", "空間認知力", "パズル", "手を動かす学び", "好奇心"] },
+      { label: "🌿 自然体験・アウトドア", next: null, tags: ["自由研究", "好奇心", "木育", "非認知能力", "フィンランド教育"] },
+      { label: "🎯 遊びが学びになる理由", next: null, tags: ["非認知能力", "好奇心", "手を動かす学び", "パズル", "考える力"] },
+    ]
+  },
+  // ── 子育て → メンタル ──
+  parent_mental: {
+    message: "メンタル・心構えのどんなことが知りたい？",
+    options: [
+      { label: "😰 受験のストレス対策", next: null, tags: ["メンタル", "親の心構え", "声かけ", "保護者向け", "受験後"] },
+      { label: "💪 折れない心の育て方", next: null, tags: ["グリット", "非認知能力", "メンタル", "成長", "考える力"] },
+      { label: "🧘 親自身のメンタルケア", next: null, tags: ["親の心構え", "メンタル", "保護者向け", "保護者の声", "親子"] },
+      { label: "🌈 不合格との向き合い方", next: null, tags: ["合格発表", "受験後", "メンタル", "親の心構え", "成長"] },
+      { label: "🎯 モチベーション維持", next: null, tags: ["メンタル", "声かけ", "習慣化", "グリット", "親子"] },
+    ]
+  },
+  // ── 子育て → 成長 ──
+  parent_growth: {
+    message: "子どもの成長でどんなことが知りたい？",
+    options: [
+      { label: "🌱 好奇心を育てる", next: null, tags: ["好奇心", "探究", "問いを立てる", "非認知能力", "考える力"] },
+      { label: "🧠 考える力を伸ばす", next: null, tags: ["考える力", "思考力", "論理的思考", "探究学習", "非認知能力"] },
+      { label: "🤝 社会性・協働する力", next: null, tags: ["非認知能力", "グリット", "成長", "PBL", "価値観"] },
+      { label: "🎨 創造性を伸ばす", next: null, tags: ["クリエイター型探究", "手を動かす学び", "好奇心", "レゴ", "探究"] },
+      { label: "📊 学力だけじゃない評価", next: null, tags: ["非認知能力", "考える力", "探究学習", "教育の質", "AI時代"] },
     ]
   },
 };
@@ -1981,7 +2268,7 @@ function TankyuNavi({ articles, onSelectArticle }) {
             <span style={{ fontSize: 22 }}>🧭</span>
             <div>
               <span style={{ fontFamily: font, fontSize: 15, fontWeight: 900, color: "#FFF" }}>探究ナビ</span>
-              <span style={{ fontFamily: font, fontSize: 11, color: "rgba(255,255,255,0.7)", marginLeft: 8 }}>3択で記事をさがそう</span>
+              <span style={{ fontFamily: font, fontSize: 11, color: "rgba(255,255,255,0.7)", marginLeft: 8 }}>3つの質問であなたにぴったりの記事を</span>
             </div>
           </div>
           <button onClick={close} style={{
@@ -2041,15 +2328,15 @@ function TankyuNavi({ articles, onSelectArticle }) {
                 }}>{currentNode.message}</div>
               </div>
               <div style={{
-                display: "flex", flexDirection: "column", gap: 8,
+                display: "flex", flexDirection: "column", gap: 6,
                 paddingLeft: 42,
               }}>
                 {currentNode.options.map((opt, j) => (
                   <button key={j} onClick={() => handleSelect(opt)} style={{
-                    padding: "14px 20px", borderRadius: 14,
+                    padding: "12px 18px", borderRadius: 12,
                     border: "2px solid #E8E0D4",
                     background: "#FFF", cursor: "pointer",
-                    fontFamily: font, fontSize: 14, fontWeight: 700,
+                    fontFamily: font, fontSize: 13, fontWeight: 700,
                     color: "#1A1207", transition: "all 0.15s ease",
                     textAlign: "left",
                   }}
