@@ -1040,31 +1040,37 @@ function ArticleDetail({ article, onBack, showComments = false, articles, onSele
       );
     }
     if (block.type === "stat") {
+      const statItems = block.items || [{ label: block.label, value: block.value, source: block.source }];
       return (
-        <div key={i} style={{
-          display: "flex", flexWrap: "wrap", gap: 12, margin: "20px 0",
-        }}>
-          {block.items.map((s, j) => (
-            <div key={j} style={{
-              flex: "1 1 140px", background: "#fff", border: "1px solid #E8E0D4",
-              borderRadius: 14, padding: "18px 16px", textAlign: "center",
-              boxShadow: "0 2px 8px rgba(26,18,7,0.04)",
-            }}>
-              <div style={{
-                fontFamily: "'Zen Kaku Gothic New', sans-serif",
-                fontSize: 28, fontWeight: 900, color: color,
-                letterSpacing: "-0.02em",
-              }}>{s.value}</div>
-              <div style={{
-                fontFamily: "'Zen Kaku Gothic New', sans-serif",
-                fontSize: 11, fontWeight: 600, color: "#6B5D4A", marginTop: 4,
-              }}>{s.label}</div>
-            </div>
-          ))}
+        <div key={i} style={{ margin: "20px 0" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+            {statItems.map((s, j) => (
+              <div key={j} style={{
+                flex: "1 1 140px", background: "#fff", border: "1px solid #E8E0D4",
+                borderRadius: 14, padding: "18px 16px", textAlign: "center",
+                boxShadow: "0 2px 8px rgba(26,18,7,0.04)",
+              }}>
+                <div style={{
+                  fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                  fontSize: 28, fontWeight: 900, color: color,
+                  letterSpacing: "-0.02em",
+                }}>{s.value}</div>
+                <div style={{
+                  fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                  fontSize: 11, fontWeight: 600, color: "#6B5D4A", marginTop: 4,
+                }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+          {(block.source || (statItems.length === 1 && statItems[0].source)) && <div style={{
+            fontFamily: "'Zen Kaku Gothic New', sans-serif",
+            fontSize: 10, color: "#A89B8C", marginTop: 6, textAlign: "right",
+          }}>出典: {block.source || statItems[0].source}</div>}
         </div>
       );
     }
     if (block.type === "chart") {
+      if (!block.data || block.data.length === 0) return null;
       const maxVal = Math.max(...block.data.map(d => d.value));
       return (
         <div key={i} style={{ margin: "24px 0" }}>
@@ -1107,6 +1113,7 @@ function ArticleDetail({ article, onBack, showComments = false, articles, onSele
       );
     }
     if (block.type === "table") {
+      if (!block.headers || !block.rows) return null;
       return (
         <div key={i} style={{ margin: "20px 0", overflowX: "auto" }}>
           <div style={{
@@ -1133,7 +1140,7 @@ function ArticleDetail({ article, onBack, showComments = false, articles, onSele
                     <td key={ci} style={{
                       padding: "8px 12px", textAlign: ci === 0 ? "left" : "center",
                       borderBottom: "1px solid #E8E0D4", fontWeight: ci === 0 ? 600 : 400,
-                      color: ci === 2 ? (cell.startsWith("+") ? "#059669" : cell.startsWith("−") ? "#E8453C" : "#6B5D4A") : "#2D2416",
+                      color: ci === 2 && typeof cell === "string" ? (cell.startsWith("+") ? "#059669" : cell.startsWith("−") ? "#E8453C" : "#6B5D4A") : "#2D2416",
                     }}>{cell}</td>
                   ))}
                 </tr>
@@ -1144,6 +1151,7 @@ function ArticleDetail({ article, onBack, showComments = false, articles, onSele
       );
     }
     if (block.type === "list") {
+      if (!block.items) return null;
       return (
         <ul key={i} style={{ margin: "12px 0 18px", paddingLeft: 24 }}>
           {block.items.map((item, j) => (
@@ -1248,7 +1256,7 @@ function ArticleDetail({ article, onBack, showComments = false, articles, onSele
             display: "flex", gap: 7, flexWrap: "wrap",
             marginTop: 24, paddingTop: 18, borderTop: "1px solid #E8E0D4",
           }}>
-            {article.tags.map(tag => (
+            {(article.tags || []).map(tag => (
               <span key={tag} onClick={() => onTagClick && onTagClick(tag)} style={{
                 padding: "4px 11px", borderRadius: 12, background: "#F5F0E8",
                 fontFamily: "'Zen Kaku Gothic New', sans-serif",
@@ -1484,14 +1492,21 @@ function DashboardBodyEditor({ body, onChange }) {
               fontSize: 10, color: "#A0947E",
             }}>ブロック {i + 1}</span>
           </div>
-          {block.type === "table" ? (
+          {(block.type === "table" || block.type === "chart") ? (
             <div style={{
               fontFamily: "'Zen Kaku Gothic New', sans-serif",
               fontSize: 11, color: "#8B7355", fontStyle: "italic",
-            }}>（表はコード内で直接編集してください）</div>
+            }}>（{block.type === "table" ? "表" : "グラフ"}はコード内で直接編集してください）</div>
+          ) : block.type === "stat" && !block.content ? (
+            <div style={{ display: "flex", gap: 8 }}>
+              <input value={block.label || ""} onChange={e => updateBlock(i, "label", e.target.value)}
+                placeholder="ラベル" style={{ flex: 1, padding: "8px 10px", borderRadius: 8, border: "1px solid #D4C5AE", background: "#fff", fontFamily: "'Zen Kaku Gothic New', sans-serif", fontSize: 12, outline: "none" }} />
+              <input value={block.value || ""} onChange={e => updateBlock(i, "value", e.target.value)}
+                placeholder="数値" style={{ width: 100, padding: "8px 10px", borderRadius: 8, border: "1px solid #D4C5AE", background: "#fff", fontFamily: "'Zen Kaku Gothic New', sans-serif", fontSize: 12, fontWeight: 700, outline: "none" }} />
+            </div>
           ) : (
             <textarea
-              value={block.content}
+              value={block.content || ""}
               onChange={e => updateBlock(i, "content", e.target.value)}
               rows={block.type === "heading" ? 1 : 3}
               style={{
@@ -1662,12 +1677,22 @@ function Dashboard({ articles, onUpdateArticle }) {
   const [editingId, setEditingId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCat, setFilterCat] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all"); // "all" | "public" | "hidden"
+
+  const toggleHidden = (article, e) => {
+    e.stopPropagation();
+    onUpdateArticle({ ...article, hidden: !article.hidden });
+  };
 
   const filtered = articles.filter(a => {
     if (filterCat !== "all" && a.category !== filterCat) return false;
+    if (filterStatus === "public" && a.hidden) return false;
+    if (filterStatus === "hidden" && !a.hidden) return false;
     if (searchQuery && !a.title.includes(searchQuery) && !a.summary.includes(searchQuery)) return false;
     return true;
   });
+
+  const hiddenCount = articles.filter(a => a.hidden).length;
 
   if (editingId) {
     const article = articles.find(a => a.id === editingId);
@@ -1697,7 +1722,7 @@ function Dashboard({ articles, onUpdateArticle }) {
           <div style={{
             fontFamily: "'Zen Kaku Gothic New', sans-serif",
             fontSize: 12, color: "#8B7355", marginTop: 4,
-          }}>{articles.length}件の記事を管理中</div>
+          }}>全{articles.length}件（公開 {articles.length - hiddenCount}件・非公開 {hiddenCount}件）</div>
         </div>
       </div>
 
@@ -1725,6 +1750,17 @@ function Dashboard({ articles, onUpdateArticle }) {
             }}>{c.label}</button>
           ))}
         </div>
+        <div style={{ display: "flex", gap: 4, marginLeft: 4 }}>
+          {[{ id: "all", label: "全ステータス" }, { id: "public", label: "公開" }, { id: "hidden", label: "非公開" }].map(s => (
+            <button key={s.id} onClick={() => setFilterStatus(s.id)} style={{
+              padding: "5px 12px", borderRadius: 16, border: "none", cursor: "pointer",
+              fontFamily: "'Zen Kaku Gothic New', sans-serif",
+              fontSize: 11, fontWeight: filterStatus === s.id ? 700 : 500,
+              background: filterStatus === s.id ? (s.id === "hidden" ? "#DC2626" : s.id === "public" ? "#059669" : "#1A1207") : "#F5F0E8",
+              color: filterStatus === s.id ? "#fff" : "#6B5D4A",
+            }}>{s.label}</button>
+          ))}
+        </div>
       </div>
 
       {/* Article list */}
@@ -1732,18 +1768,21 @@ function Dashboard({ articles, onUpdateArticle }) {
         {filtered.map((article, i) => {
           const color = CATEGORY_COLORS[article.category] || "#6B5D4A";
           const label = CATEGORY_LABELS[article.category] || "";
+          const isHidden = article.hidden;
           return (
             <div key={article.id}
               onClick={() => setEditingId(article.id)}
               style={{
                 display: "flex", alignItems: "center", gap: 14,
-                background: "#fff", borderRadius: 12, border: "1px solid #E8E0D4",
+                background: isHidden ? "#F9F4EC" : "#fff", borderRadius: 12,
+                border: `1px solid ${isHidden ? "#D4C5AE" : "#E8E0D4"}`,
                 padding: "14px 18px", cursor: "pointer",
                 transition: "all 0.2s ease",
+                opacity: isHidden ? 0.6 : 1,
                 animation: `fadeSlideUp 0.3s ease ${i * 0.03}s both`,
               }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = "#F97316"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(249,115,22,0.1)"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "#E8E0D4"; e.currentTarget.style.boxShadow = "none"; }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "#F97316"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(249,115,22,0.1)"; e.currentTarget.style.opacity = "1"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = isHidden ? "#D4C5AE" : "#E8E0D4"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.opacity = isHidden ? "0.6" : "1"; }}
             >
               <span style={{ fontSize: 24, flexShrink: 0 }}>{article.heroEmoji}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -1758,13 +1797,29 @@ function Dashboard({ articles, onUpdateArticle }) {
                     fontFamily: "'Zen Kaku Gothic New', sans-serif",
                     fontSize: 10, color: "#A0947E",
                   }}>{article.date}</span>
+                  {isHidden && <span style={{
+                    padding: "1px 8px", borderRadius: 8,
+                    background: "#DC262615", color: "#DC2626",
+                    fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                    fontSize: 10, fontWeight: 700,
+                  }}>非公開</span>}
                 </div>
                 <div style={{
                   fontFamily: "'Zen Kaku Gothic New', sans-serif",
-                  fontSize: 13, fontWeight: 700, color: "#1A1207",
+                  fontSize: 13, fontWeight: 700, color: isHidden ? "#8B7355" : "#1A1207",
                   whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
                 }}>{article.title}</div>
               </div>
+              <button
+                onClick={(e) => toggleHidden(article, e)}
+                style={{
+                  padding: "6px 14px", borderRadius: 16, border: "none", cursor: "pointer",
+                  fontFamily: "'Zen Kaku Gothic New', sans-serif",
+                  fontSize: 11, fontWeight: 700, flexShrink: 0, transition: "all 0.2s ease",
+                  background: isHidden ? "#059669" : "#DC262615",
+                  color: isHidden ? "#fff" : "#DC2626",
+                }}
+              >{isHidden ? "公開する" : "非公開"}</button>
               <span style={{
                 fontFamily: "'Zen Kaku Gothic New', sans-serif",
                 fontSize: 11, color: "#EA580C", fontWeight: 600, flexShrink: 0,
@@ -1783,7 +1838,7 @@ function Dashboard({ articles, onUpdateArticle }) {
 
 function App() {
   const [mode, setMode] = useState("site"); // "site" | "dashboard"
-  const [articles, setArticles] = useState([]);
+  const [allArticles, setAllArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
@@ -1794,21 +1849,22 @@ function App() {
   const [dashPwErr, setDashPwErr] = useState(false);
   const DASH_PW = "trail2026";
 
+  // サイト表示用：非公開(hidden)と予約投稿(publishDate未来)を除外
+  const today = new Date().toISOString().slice(0, 10);
+  const articles = allArticles.filter(a =>
+    !a.hidden && (!a.publishDate || a.publishDate <= today)
+  );
+
   useEffect(() => {
     fetch("./articles.json")
       .then(r => r.json())
       .then(data => {
-        // publishDate フィルタ：公開日が未来の記事を除外
-        const today = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
-        const published = data.filter(a => !a.publishDate || a.publishDate <= today);
-        setArticles(published);
+        setAllArticles(data);
         setLoading(false);
       })
       .catch(() => {
         if (typeof ARTICLES !== "undefined") {
-          const today = new Date().toISOString().slice(0, 10);
-          const published = ARTICLES.filter(a => !a.publishDate || a.publishDate <= today);
-          setArticles(published);
+          setAllArticles(ARTICLES);
         }
         setLoading(false);
       });
@@ -1837,7 +1893,7 @@ function App() {
   };
 
   const handleUpdateArticle = (updated) => {
-    setArticles(prev => prev.map(a => a.id === updated.id ? updated : a));
+    setAllArticles(prev => prev.map(a => a.id === updated.id ? updated : a));
   };
 
   if (loading) {
@@ -1946,7 +2002,7 @@ function App() {
         </div>
       ) : mode === "dashboard" ? (
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 20px" }}>
-          <Dashboard articles={articles} onUpdateArticle={handleUpdateArticle} />
+          <Dashboard articles={allArticles} onUpdateArticle={handleUpdateArticle} />
         </div>
       ) : (
         <>
