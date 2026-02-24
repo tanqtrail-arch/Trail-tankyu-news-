@@ -2023,8 +2023,9 @@ function ArticleEditor({ article, onUpdate, onClose }) {
   );
 }
 
-function Dashboard({ articles, onUpdateArticle }) {
+function Dashboard({ articles, onUpdateArticle, getFullArticle }) {
   const [editingId, setEditingId] = useState(null);
+  const [editingArticle, setEditingArticle] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCat, setFilterCat] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all"); // "all" | "public" | "hidden"
@@ -2032,6 +2033,15 @@ function Dashboard({ articles, onUpdateArticle }) {
   const toggleHidden = (article, e) => {
     e.stopPropagation();
     onUpdateArticle({ ...article, hidden: !article.hidden });
+  };
+
+  const handleEdit = async (id) => {
+    const meta = articles.find(a => a.id === id);
+    if (meta && getFullArticle) {
+      const full = await getFullArticle(meta);
+      setEditingArticle(full);
+      setEditingId(id);
+    }
   };
 
   const filtered = articles.filter(a => {
@@ -2044,17 +2054,14 @@ function Dashboard({ articles, onUpdateArticle }) {
 
   const hiddenCount = articles.filter(a => a.hidden).length;
 
-  if (editingId) {
-    const article = articles.find(a => a.id === editingId);
-    if (article) {
+  if (editingId && editingArticle) {
       return (
         <ArticleEditor
-          article={article}
-          onUpdate={(updated) => { onUpdateArticle(updated); }}
-          onClose={() => setEditingId(null)}
+          article={editingArticle}
+          onUpdate={(updated) => { onUpdateArticle(updated); setEditingArticle(updated); }}
+          onClose={() => { setEditingId(null); setEditingArticle(null); }}
         />
       );
-    }
   }
 
   return (
@@ -2121,7 +2128,7 @@ function Dashboard({ articles, onUpdateArticle }) {
           const isHidden = article.hidden;
           return (
             <div key={article.id}
-              onClick={() => setEditingId(article.id)}
+              onClick={() => handleEdit(article.id)}
               style={{
                 display: "flex", alignItems: "center", gap: 14,
                 background: isHidden ? "#F9F4EC" : "#fff", borderRadius: 12,
@@ -2461,6 +2468,9 @@ function App() {
   const [dashPwErr, setDashPwErr] = useState(false);
   const DASH_PW = "trail2026";
 
+  // 月別ファイルのキャッシュ
+  const monthCacheRef = useRef({});
+
   // サイト表示用：非公開(hidden)と予約投稿(publishDate未来)を除外
   const today = new Date().toISOString().slice(0, 10);
   const articles = allArticles.filter(a =>
@@ -2468,7 +2478,7 @@ function App() {
   );
 
   useEffect(() => {
-    fetch("./articles.json")
+    fetch("./index.json")
       .then(r => r.json())
       .then(data => {
         setAllArticles(data);
@@ -2481,6 +2491,28 @@ function App() {
         setLoading(false);
       });
   }, []);
+
+  // 記事の本文を月別ファイルから取得する関数
+  const getFullArticle = async (article) => {
+    // すでにbodyを持っている場合はそのまま返す
+    if (article.body) return article;
+    const filePath = article.file;
+    if (!filePath) return article;
+    // キャッシュ確認
+    if (!monthCacheRef.current[filePath]) {
+      const res = await fetch("./" + filePath);
+      monthCacheRef.current[filePath] = await res.json();
+    }
+    const full = monthCacheRef.current[filePath].find(a => a.id === article.id);
+    return full || article;
+  };
+
+  // 記事選択ハンドラ（本文をfetchしてからセット）
+  const handleSelectArticle = async (article) => {
+    if (!article) { setSelectedArticle(null); return; }
+    const full = await getFullArticle(article);
+    setSelectedArticle(full);
+  };
 
   // OGP更新
   useEffect(() => { updateOGP(selectedArticle); }, [selectedArticle]);
@@ -2614,7 +2646,7 @@ function App() {
         </div>
       ) : mode === "dashboard" ? (
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 20px" }}>
-          <Dashboard articles={allArticles} onUpdateArticle={handleUpdateArticle} />
+          <Dashboard articles={allArticles} onUpdateArticle={handleUpdateArticle} getFullArticle={getFullArticle} />
         </div>
       ) : (
         <>
@@ -2627,7 +2659,7 @@ function App() {
           />
 
           {!selectedArticle && <HeroSection />}
-          {!selectedArticle && <TankyuNavi articles={articles} onSelectArticle={setSelectedArticle} />}
+          {!selectedArticle && <TankyuNavi articles={articles} onSelectArticle={handleSelectArticle} />}
 
           <main style={{ maxWidth: 960, margin: "0 auto", padding: "28px 20px 0" }}>
             <div className="main-grid" style={{
@@ -2637,7 +2669,7 @@ function App() {
             }}>
               <div>
                 {selectedArticle ? (
-                  <ArticleDetail article={selectedArticle} onBack={() => setSelectedArticle(null)} showComments={true} articles={articles} onSelect={setSelectedArticle} onTagClick={handleTagClick} />
+                  <ArticleDetail article={selectedArticle} onBack={() => setSelectedArticle(null)} showComments={true} articles={articles} onSelect={handleSelectArticle} onTagClick={handleTagClick} />
                 ) : (
                   <>
                     <div style={{
@@ -2659,7 +2691,7 @@ function App() {
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                       {filteredArticles.map((article, i) => (
-                        <ArticleCard key={article.id} article={article} onSelect={setSelectedArticle} index={i} onTagClick={handleTagClick} />
+                        <ArticleCard key={article.id} article={article} onSelect={handleSelectArticle} index={i} onTagClick={handleTagClick} />
                       ))}
                       {filteredArticles.length === 0 && (
                         <div style={{
